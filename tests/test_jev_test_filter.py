@@ -149,3 +149,108 @@ def test_summary_reads_docstring_and_project_imports(tmp_path):
     s = jtf.summarize_test(f)
     assert s["purpose"] == "ルータの選択ロジックのテスト."
     assert s["imports"] == ["core.router", "service"]
+
+
+# --- シャドーモード（テストは全部走らせ、予測と結果を記録して比べる） ------------------
+
+JUNIT = """<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite name="pytest" tests="4" failures="1" errors="1">
+  <testcase classname="tests.test_router" name="test_ok" time="0.01"/>
+  <testcase classname="tests.test_router" name="test_bad" time="0.01"><failure message="boom"/></testcase>
+  <testcase classname="tests.test_finops" name="test_ok" time="0.01"/>
+  <testcase classname="tests.test_notify_api" name="test_err" time="0.01"><error message="setup"/></testcase>
+</testsuite></testsuites>"""
+
+
+def test_parse_junit_returns_failed_test_files():
+    assert jtf.parse_junit(JUNIT) == {"tests/test_router.py", "tests/test_notify_api.py"}
+
+
+def test_parse_junit_tolerates_broken_xml():
+    assert jtf.parse_junit("<not xml") is None
+
+
+def _pred(**ps):
+    return [{"test": f"tests/test_{k}.py", "p": v} for k, v in ps.items()]
+
+
+def test_compare_counts_misses_when_skipped_test_failed():
+    preds = _pred(router=0.9, finops=0.05, notify_api=0.10)
+    out = jtf.compare(preds, {"tests/test_router.py", "tests/test_notify_api.py"}, skip_below=0.15)
+    assert out["missed"] == ["tests/test_notify_api.py"]          # 省くはずだったのに落ちた
+    assert out["caught"] == ["tests/test_router.py"]
+    assert out["would_skip"] == 2 and out["candidates"] == 3
+
+
+def test_compare_ignores_always_run_tests_without_probability():
+    preds = [{"test": "tests/test_router.py", "p": None}] + _pred(finops=0.9)
+    out = jtf.compare(preds, {"tests/test_router.py"}, skip_below=0.15)
+    assert out["missed"] == [] and out["candidates"] == 1
+
+
+def _record(preds, failed, mode="selected"):
+    return {"mode": mode, "predictions": preds, "failed_files": sorted(failed)}
+
+
+def test_sweep_reports_misses_and_savings_per_threshold():
+    recs = [_record(_pred(a=0.04, b=0.12, c=0.9), {"tests/test_b.py"}),
+            _record(_pred(a=0.02, b=0.30, c=0.8), set())]
+    rows = {r["threshold"]: r for r in jtf.sweep(recs, thresholds=(0.05, 0.15, 0.5))}
+    assert rows[0.05]["missed"] == 0 and rows[0.05]["skip_rate"] == pytest.approx(2 / 6)
+    assert rows[0.15]["missed"] == 1                                # b(0.12) を省いて見落とす
+    assert rows[0.5]["missed"] == 1 and rows[0.5]["skip_rate"] == pytest.approx(4 / 6)
+
+
+def test_sweep_skips_records_without_predictions():
+    recs = [_record([], {"tests/test_a.py"}, mode="all"), _record(_pred(a=0.9), set())]
+    assert jtf.sweep(recs, thresholds=(0.15,))[0]["records"] == 1
+
+
+def test_recommend_waits_until_enough_failures_are_observed():
+    recs = [_record(_pred(a=0.9, b=0.01), {"tests/test_a.py"})]
+    r = jtf.recommend(recs, min_failures=10)
+    assert r["threshold"] is None and "まだ" in r["reason"]
+
+
+def test_recommend_picks_highest_threshold_with_zero_misses():
+    recs = [_record(_pred(a=0.9, b=0.01, c=0.2), {"tests/test_a.py"}) for _ in range(10)]
+    recs += [_record(_pred(a=0.25, b=0.01), {"tests/test_a.py"}) for _ in range(2)]
+    r = jtf.recommend(recs, min_failures=10, thresholds=(0.05, 0.1, 0.2, 0.3))
+    assert r["threshold"] == 0.2                                   # 0.3 だと a(0.25) を見落とす
+
+
+def test_shadow_run_writes_record_and_returns_pytest_exit_code(tmp_path):
+    result = {"mode": "selected", "reason": "x", "run": ["tests/test_router.py"],
+              "skipped": [{"test": "tests/test_finops.py", "p": 0.05}],
+              "probabilities": {"tests/test_router.py": 0.9, "tests/test_finops.py": 0.05},
+              "always_run": [], "usage": {"input_tokens": 1, "output_tokens": 1}}
+
+    def runner(junit_path):
+        Path(junit_path).write_text(JUNIT, encoding="utf-8")
+        return 1
+
+    code, rec_path = jtf.shadow_run(result, runner, logs_dir=tmp_path, base="abc", changed=["core/router.py"],
+                                    skip_below=0.15)
+    rec = json.loads(Path(rec_path).read_text(encoding="utf-8"))
+    assert code == 1
+    assert rec["failed_files"] == ["tests/test_notify_api.py", "tests/test_router.py"]
+    assert rec["comparison"]["caught"] == ["tests/test_router.py"] and rec["comparison"]["missed"] == []
+    assert {p["test"] for p in rec["predictions"]} == {"tests/test_router.py", "tests/test_finops.py"}
+    assert Path(rec_path).parent.parent.name == "jev-shadow"
+
+
+def test_shadow_run_records_unknown_outcome_when_junit_missing(tmp_path):
+    result = {"mode": "all", "reason": "x", "run": [], "skipped": [], "probabilities": {},
+              "always_run": [], "usage": {}}
+    code, rec_path = jtf.shadow_run(result, lambda p: 2, logs_dir=tmp_path, base="abc", changed=[],
+                                    skip_below=0.15)
+    rec = json.loads(Path(rec_path).read_text(encoding="utf-8"))
+    assert code == 2 and rec["failed_files"] is None
+
+
+def test_plan_exposes_probabilities_and_always_run_for_shadow():
+    def post(payload):
+        return _answers({qid: 0.5 for qid in payload["questions"]})
+    r = _plan(["tests/test_finops.py", "core/router.py"], post=post)
+    assert r["always_run"] == ["tests/test_finops.py"]
+    assert set(r["probabilities"]) == {"tests/test_router.py", "tests/test_notify_api.py"}
