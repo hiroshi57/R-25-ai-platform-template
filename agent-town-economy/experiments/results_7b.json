@@ -1,0 +1,138 @@
+[
+  {
+    "policy": "heuristic",
+    "condition": "tourism-low",
+    "seconds": 0.0,
+    "validated": true,
+    "malformed": 0,
+    "wage_share_of_revenue": 4.6116,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 15,
+    "gini_terminal": 0.2904,
+    "persistence": 0.9758,
+    "levers": {
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 2,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 119,
+        "failures": 111
+      },
+      "start_shift": {
+        "calls": 67,
+        "failures": 0
+      }
+    }
+  },
+  {
+    "policy": "heuristic",
+    "condition": "tourism-high",
+    "seconds": 0.0,
+    "validated": true,
+    "malformed": 0,
+    "wage_share_of_revenue": 0.4838,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 145,
+    "gini_terminal": 0.288,
+    "persistence": 0.9758,
+    "levers": {
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 2,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 119,
+        "failures": 113
+      },
+      "start_shift": {
+        "calls": 67,
+        "failures": 0
+      }
+    }
+  },
+  {
+    "policy": "llm",
+    "condition": "tourism-low",
+    "seconds": 1702.4,
+    "validated": true,
+    "malformed": 0,
+    "wage_share_of_revenue": 0.0,
+    "items_repriced_pct": 0.2512,
+    "businesses_trading": 154,
+    "gini_terminal": 0.3188,
+    "persistence": 1.0,
+    "levers": {
+      "set_price": {
+        "calls": 228,
+        "failures": 0
+      },
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 0,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 0,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 0,
+        "failures": 0
+      }
+    }
+  },
+  {
+    "policy": "llm",
+    "condition": "tourism-high",
+    "seconds": 882.5,
+    "validated": true,
+    "malformed": 0,
+    "wage_share_of_revenue": 0.0,
+    "items_repriced_pct": 0.2512,
+    "businesses_trading": 250,
+    "gini_terminal": 0.3188,
+    "persistence": 1.0,
+    "levers": {
+      "set_price": {
+        "calls": 237,
+        "failures": 0
+      },
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 0,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 0,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 0,
+        "failures": 0
+      }
+    }
+  }
+]

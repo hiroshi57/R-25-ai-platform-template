@@ -1,0 +1,198 @@
+[
+  {
+    "memory": "flat",
+    "condition": "baseline",
+    "validated": true,
+    "wage_share_of_revenue": 1.0687,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 262,
+    "gini_terminal": 0.4094,
+    "persistence": 0.9769,
+    "levers": {
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 219,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 2611,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 1864,
+        "failures": 1836
+      }
+    }
+  },
+  {
+    "memory": "flat",
+    "condition": "tourism-high",
+    "validated": true,
+    "wage_share_of_revenue": 0.512,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 538,
+    "gini_terminal": 0.4102,
+    "persistence": 0.9889,
+    "levers": {
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 219,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 2611,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 1864,
+        "failures": 1835
+      }
+    }
+  },
+  {
+    "memory": "flat",
+    "condition": "wealth-grant",
+    "validated": true,
+    "wage_share_of_revenue": 1.0828,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 263,
+    "gini_terminal": 0.3857,
+    "persistence": 0.9668,
+    "levers": {
+      "set_wage": {
+        "calls": 0,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 219,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 2611,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 1864,
+        "failures": 1836
+      }
+    },
+    "mpc": 0.05,
+    "excess_spend": 250.0
+  },
+  {
+    "memory": "wiki",
+    "condition": "baseline",
+    "validated": true,
+    "wage_share_of_revenue": 0.9975,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 273,
+    "gini_terminal": 0.4111,
+    "persistence": 0.9824,
+    "levers": {
+      "set_wage": {
+        "calls": 648,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 350,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 2285,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 1636,
+        "failures": 1610
+      }
+    }
+  },
+  {
+    "memory": "wiki",
+    "condition": "tourism-high",
+    "validated": true,
+    "wage_share_of_revenue": 0.4707,
+    "items_repriced_pct": 1.0048,
+    "businesses_trading": 532,
+    "gini_terminal": 0.4062,
+    "persistence": 0.9782,
+    "levers": {
+      "set_wage": {
+        "calls": 1166,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 1652,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 194,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 1391,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 941,
+        "failures": 914
+      }
+    }
+  },
+  {
+    "memory": "wiki",
+    "condition": "wealth-grant",
+    "validated": true,
+    "wage_share_of_revenue": 1.0096,
+    "items_repriced_pct": 0.0,
+    "businesses_trading": 255,
+    "gini_terminal": 0.3883,
+    "persistence": 0.9625,
+    "levers": {
+      "set_wage": {
+        "calls": 527,
+        "failures": 0
+      },
+      "set_price": {
+        "calls": 0,
+        "failures": 0
+      },
+      "buy_food": {
+        "calls": 394,
+        "failures": 0
+      },
+      "start_shift": {
+        "calls": 2341,
+        "failures": 0
+      },
+      "invite_to_talk": {
+        "calls": 1606,
+        "failures": 1580
+      }
+    },
+    "mpc": 0.1677,
+    "excess_spend": 838.5
+  }
+]
