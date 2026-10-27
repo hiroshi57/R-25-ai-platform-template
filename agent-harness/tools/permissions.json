@@ -1,0 +1,30 @@
+{
+  "read_files": {
+    "mode": "automatic",
+    "requires": []
+  },
+  "write_workspace": {
+    "mode": "automatic",
+    "requires": ["孤立したワークスペース", "差分記録"]
+  },
+  "send_message": {
+    "mode": "approval",
+    "requires": ["final_content_preview"]
+  },
+  "vercel_read": {
+    "mode": "automatic",
+    "requires": ["読取専用"]
+  },
+  "run_orchestrator": {
+    "mode": "approval",
+    "requires": ["入力検証OK", "バックアップ準備", "人間承認", "本番非実行(ドライラン)"]
+  },
+  "deploy_production": {
+    "mode": "approval",
+    "requires": ["テストパス", "ロールバック準備完了"]
+  },
+  "delete_data": {
+    "mode": "approval",
+    "requires": ["正確なターゲット", "回復プラン"]
+  }
+}

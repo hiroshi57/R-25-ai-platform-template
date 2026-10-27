@@ -1,5 +1,4 @@
 """LLMRouter の選択・フォールバック・観測性の検証."""
-import pytest
 
 from core import (
     FailingProvider,
@@ -71,7 +70,7 @@ def test_all_providers_failing_raises():
     r = LLMRouter(providers=provs)
     try:
         r.route("x")
-        assert False, "should have raised"
+        raise AssertionError("should have raised")
     except NoProviderAvailable:
         pass
 

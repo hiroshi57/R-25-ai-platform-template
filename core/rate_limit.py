@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
-from typing import Callable, Dict
+from dataclasses import dataclass
+from typing import Callable
 
 
 @dataclass
@@ -26,7 +26,7 @@ class RateLimiter:
         self.capacity = float(capacity)
         self.refill_per_sec = float(refill_per_sec)
         self._now = now_fn
-        self._buckets: Dict[str, _Bucket] = {}
+        self._buckets: dict[str, _Bucket] = {}
 
     def _bucket(self, key: str) -> _Bucket:
         b = self._buckets.get(key)

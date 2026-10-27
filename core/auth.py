@@ -13,7 +13,6 @@ import hmac
 import logging
 import os
 import secrets
-from typing import Dict, Optional
 
 logger = logging.getLogger("ai_platform.auth")
 
@@ -32,21 +31,21 @@ def generate_api_key(nbytes: int = 32) -> str:
 class APIKeyStore:
     """key(平文) -> tenant_id を保持。比較はハッシュで行う."""
 
-    def __init__(self, keys: Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, keys: dict[str, str] | None = None) -> None:
         # {hashed_key: tenant_id}
-        self._keys: Dict[str, str] = {}
+        self._keys: dict[str, str] = {}
         for raw, tenant in (keys or {}).items():
             self.add(raw, tenant)
 
     @classmethod
-    def from_env(cls, var: str = "AI_PLATFORM_API_KEYS") -> "APIKeyStore":
+    def from_env(cls, var: str = "AI_PLATFORM_API_KEYS") -> APIKeyStore:
         """環境変数 "key1:tenantA,key2:tenantB" 形式から読み込む.
 
         キー自体に ':' が含まれる場合を考慮し、**最後の** ':' で分割する
         (secrets.token_urlsafe は ':' を含まないが、外部発行キーは含みうる)。
         """
         raw = os.getenv(var, "").strip()
-        keys: Dict[str, str] = {}
+        keys: dict[str, str] = {}
         if raw:
             for pair in raw.split(","):
                 pair = pair.strip()
@@ -73,20 +72,20 @@ class APIKeyStore:
                 tenant_id, MIN_RECOMMENDED_KEY_LEN)
         self._keys[_hash(raw_key)] = tenant_id
 
-    def resolve_tenant(self, raw_key: Optional[str]) -> Optional[str]:
+    def resolve_tenant(self, raw_key: str | None) -> str | None:
         if not raw_key:
             return None
         digest = _hash(raw_key)
         # dict の直接参照ではなく定数時間比較で全件を走査する。
         # 辞書探索はハッシュ後の値に対する操作なので実害は小さいが、
         # 早期 return による分岐タイミング差を残さないため明示的に揃える。
-        found: Optional[str] = None
+        found: str | None = None
         for known_hash, tenant in self._keys.items():
             if hmac.compare_digest(known_hash, digest):
                 found = tenant
         return found
 
-    def verify(self, raw_key: Optional[str]) -> bool:
+    def verify(self, raw_key: str | None) -> bool:
         return self.resolve_tenant(raw_key) is not None
 
     def __len__(self) -> int:
