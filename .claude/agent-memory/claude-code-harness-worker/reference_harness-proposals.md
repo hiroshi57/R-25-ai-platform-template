@@ -15,3 +15,5 @@ diff 形式・根拠リンク付き。5提案すべて **2026-09-11 承認・rep
 
 **How to apply**: メモリ運用ルールの改善や harness-retro を扱うとき参照。
 運用ルール本体は [[memory-curation-rules]]。グローバル CLAUDE.md セクション7 の提案フォーマット規約に準拠。
+
+[更新: 2026-09-29] 提案（`harness-proposals/`）とルール（`.claude/rules/`）は Private リポジトリ `hiroshi57/harness-rules`（ローカル: `C:/Users/hiroshi_takizawa/harness-rules`）へ移し、本 repo からは削除した。上記のパスは harness-rules 側で読む。本 repo の履歴には削除前の版が残る。新しい提案・ルールは harness-rules に書く。

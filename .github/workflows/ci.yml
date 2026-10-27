@@ -66,6 +66,25 @@ jobs:
       - name: Ruff (format check)
         run: ruff format --check . || echo "::warning::formatting drift detected"
 
+  agent-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run agent-harness tests
+        # 依存パッケージゼロなので install は不要。
+        # このジョブが無いあいだ agent-harness は CI で一度も実行されておらず、
+        # 「CI 緑」が Node 側の品質を何も保証していなかった。
+        run: node --test agent-harness/test/*.test.mjs
+      - name: Run the demo loop
+        # テストは state-patch のみを見る。ループ全体が最後まで進むことは別に担保する。
+        run: node agent-harness/src/harness.mjs
+      - name: Run the context-growth bench
+        # ベンチが壊れたまま放置されないようにする（実行は1秒未満）
+        run: node agent-harness/bench/context-growth.mjs
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

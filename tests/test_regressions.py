@@ -7,9 +7,22 @@ from __future__ import annotations
 import pytest
 
 from core import (
-    APIKeyStore, BudgetGuard, LLMRouter, MockProvider, ProviderSpec, RoutingStrategy,
-    Settings, detect_cost_anomaly, estimate_tokens, project_month_end, provider_mode,
-    summarize, RequestMetric, build_providers, days_in_month_of,
+    APIKeyStore,
+    BudgetGuard,
+    LLMRouter,
+    MockProvider,
+    NoProviderAvailable,
+    ProviderSpec,
+    RequestMetric,
+    RoutingStrategy,
+    Settings,
+    build_providers,
+    days_in_month_of,
+    detect_cost_anomaly,
+    estimate_tokens,
+    project_month_end,
+    provider_mode,
+    summarize,
 )
 from core.llm_router import _CircuitBreaker, _min_max
 from core.providers import FailingProvider
@@ -151,7 +164,7 @@ def test_failing_provider_is_demoted_after_threshold():
 def test_all_providers_failing_still_raises():
     provs = {"a": FailingProvider(_spec("a", 1, 1, 1, 1))}
     r = LLMRouter(providers=provs)
-    with pytest.raises(Exception):
+    with pytest.raises(NoProviderAvailable):
         r.route("x")
 
 

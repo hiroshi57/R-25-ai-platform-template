@@ -4,12 +4,12 @@
 """
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import json
 import logging
 import sys
 import uuid
-from typing import Optional
 
 # リクエスト単位で伝播する相関ID
 _request_id: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
@@ -59,10 +59,8 @@ def configure_logging(level: str = "INFO", json_format: bool = True) -> None:
     for h in list(root.handlers):
         root.removeHandler(h)
         # ハンドラを外すだけだとファイル/ソケットが開いたままリークする
-        try:
+        with contextlib.suppress(Exception):  # クローズ失敗でアプリを落とさない
             h.close()
-        except Exception:  # noqa: BLE001 - クローズ失敗でアプリを落とさない
-            pass
     handler = logging.StreamHandler(sys.stdout)
     if json_format:
         handler.setFormatter(JsonFormatter())

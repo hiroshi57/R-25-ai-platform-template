@@ -9,8 +9,8 @@ from __future__ import annotations
 import logging
 import threading
 from collections import deque
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Deque, Dict, Iterable, List, Optional
 
 logger = logging.getLogger("ai_platform.observability")
 
@@ -58,13 +58,13 @@ def percentile(values: Iterable[float], pct: float) -> float:
 _percentile = percentile
 
 
-def empty_summary() -> Dict:
+def empty_summary() -> dict:
     return {"count": 0, "ok_count": 0, "error_count": 0, "error_rate": 0.0,
             "total_cost_usd": 0.0, "p50_latency_ms": 0.0, "p95_latency_ms": 0.0,
             "p99_latency_ms": 0.0, "fallback_rate": 0.0, "by_provider": {}}
 
 
-def summarize(metrics: List[RequestMetric]) -> Dict:
+def summarize(metrics: list[RequestMetric]) -> dict:
     """RequestMetric のリストを集計する(MetricsStore / DB 双方から使える純関数).
 
     重要な修正: 全プロバイダ失敗時のレコードは latency_ms=0 / cost=0 で記録されるため、
@@ -77,7 +77,7 @@ def summarize(metrics: List[RequestMetric]) -> Dict:
         return empty_summary()
     ok_metrics = [m for m in metrics if m.ok]
     latencies = [m.latency_ms for m in ok_metrics]
-    by_provider: Dict[str, Dict] = {}
+    by_provider: dict[str, dict] = {}
     for m in ok_metrics:
         bp = by_provider.setdefault(
             m.provider, {"count": 0, "cost_usd": 0.0, "input_tokens": 0, "output_tokens": 0})
@@ -108,7 +108,7 @@ class MetricsStore:
     """
 
     def __init__(self, max_records: int = DEFAULT_MAX_RECORDS) -> None:
-        self._metrics: Deque[RequestMetric] = deque(maxlen=max_records)
+        self._metrics: deque[RequestMetric] = deque(maxlen=max_records)
         self._lock = threading.Lock()
 
     def record(self, metric: RequestMetric) -> None:
@@ -126,11 +126,11 @@ class MetricsStore:
         with self._lock:
             return len(self._metrics)
 
-    def snapshot(self) -> List[RequestMetric]:
+    def snapshot(self) -> list[RequestMetric]:
         with self._lock:
             return list(self._metrics)
 
-    def last(self) -> Optional[RequestMetric]:
+    def last(self) -> RequestMetric | None:
         with self._lock:
             return self._metrics[-1] if self._metrics else None
 
@@ -138,5 +138,5 @@ class MetricsStore:
         with self._lock:
             self._metrics.clear()
 
-    def summary(self) -> Dict:
+    def summary(self) -> dict:
         return summarize(self.snapshot())
