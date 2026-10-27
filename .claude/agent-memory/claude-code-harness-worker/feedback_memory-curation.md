@@ -32,3 +32,5 @@ curate するときの運用ルール。5点。
 メモリ/skills/log を扱う作業前にこの2ファイルを参照する。詳細と経緯は [[harness-proposals-filesystem-memory]]。
 残作業は提案4のグローバル CLAUDE.md セクション7 本文追記のみ（保護対象・本 repo 外・人間が別途適用）。
 グローバル CLAUDE.md セクション7「Self-Tuning Harness Loop（要約せず生ログ蓄積）」と整合する。
+
+[更新: 2026-09-29] `.claude/rules/memory-curation.md` と `.claude/rules/harness-retro.md` は本 repo から削除し、Private リポジトリ `hiroshi57/harness-rules` に移した。参照先は harness-rules 側。

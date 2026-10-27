@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from .llm_router import RoutingStrategy
 from .pricing import load_catalog
@@ -27,7 +26,7 @@ def _env_bool(key: str, default: bool) -> bool:
     return default
 
 
-def _env_float(key: str, default: float, minimum: Optional[float] = None) -> float:
+def _env_float(key: str, default: float, minimum: float | None = None) -> float:
     """不正値でクラッシュせず既定値にフォールバックする.
 
     旧実装は float(os.getenv(...)) を素で呼んでいたため、typo 一つで
@@ -59,18 +58,18 @@ class Settings:
     log_level: str = "INFO"
     log_json: bool = True
     # プロバイダの有効/無効(キーが無ければ自動でmockにフォールバック)
-    enabled_providers: List[str] = field(
+    enabled_providers: list[str] = field(
         default_factory=lambda: sorted(load_catalog().keys()))
     # 永続化先(既定はファイル。":memory:" を明示した場合のみ揮発)
     db_path: str = "ai_platform.db"
     # CORS 許可オリジン(既定は開発用の Vite / 静的配信)
-    cors_origins: List[str] = field(
+    cors_origins: list[str] = field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
     # 月次予算(USD)。0 なら予算ガード無効
     monthly_budget_usd: float = 0.0
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         strat = os.getenv("AI_PLATFORM_STRATEGY", "balanced").strip().lower()
         try:
             strategy = RoutingStrategy(strat)

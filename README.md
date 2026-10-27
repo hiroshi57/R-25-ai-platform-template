@@ -80,6 +80,7 @@ core/
   real_providers.py # 実プロバイダ切替(Claude/GPT/Gemini)。キー無しは自動mock
   observability.py  # コスト/レイテンシ分位/フォールバック率/エラー率の集計
   finops.py         # 月次予測 / 予算アラート / 予算内ルーティング / 異常検知
+  notifications.py  # スケジュール通達を Teams/Chatwork へ同報(stdlib のみ・未設定は no-op)
   logging.py        # 構造化(JSON)ロギング + request_id 相関
   config.py         # 設定の一元管理(env)
   auth.py           # APIキー認証(テナント解決)
@@ -126,9 +127,27 @@ python -m pytest --collect-only -q | tail -1
 | `GET /v1/metrics` | 要 | 自テナントの集計 |
 | `GET /v1/budget?budget_usd=` | 要 | 月末着地見込み・アラート・異常検知 |
 | `GET /v1/report` | 要 | 観測性 HTML レポート |
+| `POST /v1/notify/scheduled` | 要 | スケジュール通達を Teams / Chatwork へ同報 |
 | `GET /v1/providers` | 不要 | 各プロバイダが real / mock か |
 | `GET /healthz` | 不要 | liveness |
 | `GET /readyz` | 不要 | readiness(DB 疎通確認) |
+
+### スケジュール通達(Teams / Chatwork 同報)
+
+任意テキストを Teams と Chatwork の両方へ同報する。**外部スケジューラ**(Cloud Scheduler /
+cron 等)が `POST /v1/notify/scheduled` を叩く運用を想定している(Cloud Run はスケール0まで
+縮むため、アプリ内に常駐スケジューラは持たない)。
+
+- 送信先は env で設定する: `TEAMS_WEBHOOK_URL` / `CHATWORK_API_TOKEN` / `CHATWORK_ROOM_ID`
+- **未設定のチャネルは自動で no-op**(clone 直後でも動く。プロバイダの mock フォールバックと同じ思想)
+- 片方のチャネル障害でもう片方の配信は止めない(**部分失敗を隔離**)
+- 配信結果はチャネル単位で返る。全成功=200 / 一部失敗=502(スケジューラが再送判断できる) / 送信先ゼロ=200 かつ `delivered:false`
+
+```bash
+curl -X POST http://localhost:8000/v1/notify/scheduled \
+  -H "X-API-Key: <生成したキー>" -H "Content-Type: application/json" \
+  -d '{"message":"本日15:00より定例会議です"}'
+```
 
 ---
 

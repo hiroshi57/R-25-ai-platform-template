@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Sequence
 from enum import Enum
-from typing import Dict, List, Optional, Sequence, Tuple
 
 from .observability import MetricsStore, RequestMetric
 from .providers import BaseProvider, Completion, default_mock_providers, estimate_tokens
@@ -31,7 +31,7 @@ class NoProviderAvailable(RuntimeError):
 DEFAULT_WEIGHTS = {"cost": 0.4, "latency": 0.3, "quality": 0.3}
 
 
-def _min_max(values: Sequence[float], higher_is_better: bool) -> List[float]:
+def _min_max(values: Sequence[float], higher_is_better: bool) -> list[float]:
     """0.0-1.0 に min-max 正規化する.
 
     旧実装は「max で割る」方式だったため、値域が狭い指標(品質 0.88-0.93)は
@@ -60,11 +60,11 @@ class _CircuitBreaker:
     def __init__(self, threshold: int = 3, cooldown_sec: float = 30.0) -> None:
         self.threshold = threshold
         self.cooldown_sec = cooldown_sec
-        self._fails: Dict[str, int] = {}
-        self._opened_at: Dict[str, float] = {}
+        self._fails: dict[str, int] = {}
+        self._opened_at: dict[str, float] = {}
         self._lock = threading.Lock()
 
-    def is_open(self, name: str, now: Optional[float] = None) -> bool:
+    def is_open(self, name: str, now: float | None = None) -> bool:
         now = now if now is not None else time.monotonic()
         with self._lock:
             opened = self._opened_at.get(name)
@@ -77,7 +77,7 @@ class _CircuitBreaker:
                 return False
             return True
 
-    def record_failure(self, name: str, now: Optional[float] = None) -> None:
+    def record_failure(self, name: str, now: float | None = None) -> None:
         now = now if now is not None else time.monotonic()
         with self._lock:
             n = self._fails.get(name, 0) + 1
@@ -94,12 +94,12 @@ class _CircuitBreaker:
 class LLMRouter:
     def __init__(
         self,
-        providers: Optional[Dict[str, BaseProvider]] = None,
-        metrics: Optional[MetricsStore] = None,
-        weights: Optional[Dict[str, float]] = None,
-        breaker: Optional[_CircuitBreaker] = None,
+        providers: dict[str, BaseProvider] | None = None,
+        metrics: MetricsStore | None = None,
+        weights: dict[str, float] | None = None,
+        breaker: _CircuitBreaker | None = None,
     ) -> None:
-        self.providers: Dict[str, BaseProvider] = providers or default_mock_providers()
+        self.providers: dict[str, BaseProvider] = providers or default_mock_providers()
         if not self.providers:
             raise ValueError("at least one provider is required")
         self.metrics = metrics or MetricsStore()
@@ -117,7 +117,7 @@ class LLMRouter:
         strategy: RoutingStrategy,
         input_tokens: int = 1000,
         output_tokens: int = 1000,
-    ) -> List[BaseProvider]:
+    ) -> list[BaseProvider]:
         """想定ワークロード(input/output トークン数)に基づいて並べる.
 
         旧実装は常に 1k in / 1k out 固定で単価を比較していた。実際には
@@ -130,7 +130,7 @@ class LLMRouter:
         quals = [p.spec.quality_score for p in provs]
 
         if strategy == RoutingStrategy.COST:
-            keyed: List[Tuple[float, BaseProvider]] = list(zip(costs, provs))
+            keyed: list[tuple[float, BaseProvider]] = list(zip(costs, provs))
             ranked = [p for _, p in sorted(keyed, key=lambda kv: kv[0])]
         elif strategy == RoutingStrategy.LATENCY:
             ranked = [p for _, p in sorted(zip(lats, provs), key=lambda kv: kv[0])]
@@ -143,9 +143,9 @@ class LLMRouter:
             qual_n = _min_max(quals, higher_is_better=True)
             scored = [
                 (self.weights["cost"] * c
-                 + self.weights["latency"] * l
+                 + self.weights["latency"] * lat
                  + self.weights["quality"] * q, p)
-                for c, l, q, p in zip(cost_n, lat_n, qual_n, provs)
+                for c, lat, q, p in zip(cost_n, lat_n, qual_n, provs)
             ]
             ranked = [p for _, p in sorted(scored, key=lambda kv: kv[0], reverse=True)]
 
@@ -173,7 +173,7 @@ class LLMRouter:
         prompt: str,
         strategy: RoutingStrategy = RoutingStrategy.BALANCED,
         max_output_tokens: int = 256,
-    ) -> Tuple[Completion, RequestMetric]:
+    ) -> tuple[Completion, RequestMetric]:
         """Completion と、それに対応する RequestMetric を返す.
 
         呼び出し側が「直近のメトリクス」を MetricsStore の内部リストから
@@ -184,7 +184,7 @@ class LLMRouter:
             raise ValueError("max_output_tokens must be > 0")
         est_in = estimate_tokens(prompt)
         ranked = self._rank(strategy, input_tokens=est_in, output_tokens=max_output_tokens)
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for idx, provider in enumerate(ranked):
             try:
                 completion = provider.generate(prompt, max_output_tokens=max_output_tokens)
