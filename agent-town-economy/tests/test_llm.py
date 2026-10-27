@@ -1,14 +1,15 @@
 """LLM policy: parsing, validation, fallback, and an end-to-end run with a fake
 backend (no network). The real OpenAICompatibleBackend is exercised only for
 request construction via a monkeypatched urlopen."""
+
 import io
 import json
 import random
 
+from analysis.validate import validate
 from sim.conditions import baseline
 from sim.engine import Simulation
 from sim.policy import HeuristicPolicy, LLMPolicy, _parse_tool_name
-from analysis.validate import validate
 
 
 def test_parse_json_tool():

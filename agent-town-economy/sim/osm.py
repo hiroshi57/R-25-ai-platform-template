@@ -10,6 +10,7 @@ without a live Overpass connection:
     python data/fetch_osm.py                 # writes data/lakeside.geojson
     python run.py --osm-geojson data/lakeside.geojson --condition baseline
 """
+
 from __future__ import annotations
 
 import json
@@ -17,8 +18,8 @@ import math
 import random
 import urllib.parse
 import urllib.request
-from typing import Dict, List, Optional, Tuple
 
+from .net import require_http_url
 from .world import Place, attach_synthetic_menus
 
 # Approximate bounding box for Lakeside, Pokhara (south, west, north, east).
@@ -39,7 +40,7 @@ _CATEGORY_MAP = {
 }
 
 
-def latlon_to_local(lat: float, lon: float, center_lat: float, center_lon: float) -> Tuple[float, float]:
+def latlon_to_local(lat: float, lon: float, center_lat: float, center_lon: float) -> tuple[float, float]:
     """Equirectangular projection to metres relative to a centre point."""
     r = 6371000.0
     x = math.radians(lon - center_lon) * r * math.cos(math.radians(center_lat))
@@ -47,7 +48,7 @@ def latlon_to_local(lat: float, lon: float, center_lat: float, center_lon: float
     return (x, y)
 
 
-def _map_category(tags: Dict[str, str]) -> str:
+def _map_category(tags: dict[str, str]) -> str:
     for (k, v), cat in _CATEGORY_MAP.items():
         if tags.get(k) == v:
             return cat
@@ -56,7 +57,7 @@ def _map_category(tags: Dict[str, str]) -> str:
     return "shop"
 
 
-def _first_point(geometry: dict) -> Optional[Tuple[float, float]]:
+def _first_point(geometry: dict) -> tuple[float, float] | None:
     """Return (lon, lat) for any GeoJSON geometry by digging to the first pair."""
     coords = geometry.get("coordinates")
 
@@ -77,13 +78,13 @@ def _first_point(geometry: dict) -> Optional[Tuple[float, float]]:
 def load_places_from_geojson(
     path: str,
     rng: random.Random,
-    center: Optional[Tuple[float, float]] = None,
-) -> List[Place]:
+    center: tuple[float, float] | None = None,
+) -> list[Place]:
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     features = data.get("features", [])
 
-    parsed: List[Tuple[float, float, str]] = []  # (lon, lat, category)
+    parsed: list[tuple[float, float, str]] = []  # (lon, lat, category)
     for f in features:
         pt = _first_point(f.get("geometry", {}))
         if pt is None:
@@ -100,7 +101,7 @@ def load_places_from_geojson(
     else:
         center_lat, center_lon = center
 
-    places: List[Place] = []
+    places: list[Place] = []
     for i, (lon, lat, cat) in enumerate(parsed):
         x, y = latlon_to_local(lat, lon, center_lat, center_lon)
         places.append(Place(place_id=i, category=cat, x=x, y=y))
@@ -110,7 +111,7 @@ def load_places_from_geojson(
 
 
 # --- network fetch (not exercised by tests) --------------------------------
-def overpass_query(bbox: Tuple[float, float, float, float]) -> str:
+def overpass_query(bbox: tuple[float, float, float, float]) -> str:
     s, w, n, e = bbox
     return (
         "[out:json][timeout:60];("
@@ -144,7 +145,7 @@ def overpass_json_to_geojson(raw: dict) -> dict:
 
 
 def fetch_overpass(
-    bbox: Tuple[float, float, float, float] = POKHARA_LAKESIDE_BBOX,
+    bbox: tuple[float, float, float, float] = POKHARA_LAKESIDE_BBOX,
     out_path: str = "data/lakeside.geojson",
     endpoint: str = "https://overpass-api.de/api/interpreter",
 ) -> str:
@@ -155,8 +156,9 @@ def fetch_overpass(
     """
     query = overpass_query(bbox)
     data = urllib.parse.urlencode({"data": query}).encode("utf-8")
-    req = urllib.request.Request(
-        endpoint,
+    # 以下の noqa の理由: スキームは require_http_url で http(s) に限定済み
+    req = urllib.request.Request(  # noqa: S310
+        require_http_url(endpoint, what="Overpass endpoint"),
         data=data,
         headers={
             "User-Agent": "agent-town-economy/1.0 (arXiv:2609.11108 reproduction)",
@@ -164,7 +166,8 @@ def fetch_overpass(
             "Content-Type": "application/x-www-form-urlencoded",
         },
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    # noqa の理由: スキームは require_http_url で http(s) に限定済み
+    with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
         raw = json.load(resp)
 
     out = overpass_json_to_geojson(raw)

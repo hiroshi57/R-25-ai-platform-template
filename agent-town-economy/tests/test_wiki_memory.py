@@ -1,11 +1,12 @@
 """LLM-Wiki memory: multi-hop retrieval, flat degradation, and lever effect."""
+
 import random
 
+from analysis.validate import validate
 from sim.conditions import baseline, tourism_high
 from sim.engine import Simulation
 from sim.policy import WikiPolicy
 from sim.wiki_memory import WikiMemory
-from analysis.validate import validate
 
 
 def test_wiki_retrieves_action_one_hop():
@@ -31,8 +32,7 @@ def test_reasoning_path_is_multihop():
 
 def _run(mode, condition, seed=1, pulses=120, n=30):
     policy = WikiPolicy(random.Random(seed + 7))
-    sim = Simulation(condition, policy, seed=seed, n_agents=n,
-                     memory_factory=lambda: WikiMemory(mode=mode))
+    sim = Simulation(condition, policy, seed=seed, n_agents=n, memory_factory=lambda: WikiMemory(mode=mode))
     return sim.run(pulses)
 
 

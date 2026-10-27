@@ -8,10 +8,10 @@ transaction history.
 All amounts are integer NPR (no fractional currency) so conservation is exact
 by construction -- there is no floating-point drift to reconcile.
 """
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List
+from dataclasses import dataclass
 
 # External accounts are money sources/sinks and may hold a negative balance:
 #   genesis              -- seeds the initial money stock into internal accounts
@@ -52,7 +52,7 @@ class TxEntry:
     amount: int
     kind: str  # seed | wage | purchase | tourist_spend | grant | tax | deposit | withdraw
 
-    def as_row(self) -> Dict[str, object]:
+    def as_row(self) -> dict[str, object]:
         return {
             "pulse": self.pulse,
             "src": self.src,
@@ -68,8 +68,8 @@ class Ledger:
     offline validator can recompute every balance independently."""
 
     def __init__(self) -> None:
-        self.entries: List[TxEntry] = []
-        self.balances: Dict[str, int] = {}
+        self.entries: list[TxEntry] = []
+        self.balances: dict[str, int] = {}
 
     def ensure(self, acct: str) -> None:
         self.balances.setdefault(acct, 0)

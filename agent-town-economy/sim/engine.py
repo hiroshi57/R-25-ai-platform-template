@@ -5,12 +5,12 @@ World clock: fixed 60-simulated-minute pulses at which scheduled dynamics
 Agent clock: within each pulse every agent wakes, reasons (via the policy),
 and acts once -- a staggered stream rather than lockstep rounds.
 """
+
 from __future__ import annotations
 
 import math
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from . import money
 from .agents import Agent, Memory
@@ -24,12 +24,12 @@ class RunResult:
     condition: str
     seed: int
     pulses: int
-    panel: List[Dict[str, int]] = field(default_factory=list)          # per pulse x agent
-    tool_stats: Dict[str, Dict[str, int]] = field(default_factory=dict)
-    place_summary: List[Dict[str, int]] = field(default_factory=list)
-    treated_ids: List[int] = field(default_factory=list)
-    grant_pulse: Optional[int] = None
-    ledger_entries: List[Dict[str, object]] = field(default_factory=list)
+    panel: list[dict[str, int]] = field(default_factory=list)  # per pulse x agent
+    tool_stats: dict[str, dict[str, int]] = field(default_factory=dict)
+    place_summary: list[dict[str, int]] = field(default_factory=list)
+    treated_ids: list[int] = field(default_factory=list)
+    grant_pulse: int | None = None
+    ledger_entries: list[dict[str, object]] = field(default_factory=list)
 
 
 class Simulation:
@@ -40,7 +40,7 @@ class Simulation:
         seed: int = 0,
         n_agents: int = 100,
         memory_enabled: bool = True,
-        places: Optional[List[Place]] = None,
+        places: list[Place] | None = None,
         memory_factory=None,
     ) -> None:
         self.memory_factory = memory_factory
@@ -54,9 +54,9 @@ class Simulation:
         self.ledger = money.Ledger()
         self.world = World(self.rng, places=places)
         self.tools = Tools(self)
-        self.agents: List[Agent] = []
-        self.tool_stats: Dict[str, Dict[str, int]] = {}
-        self.treated_ids: List[int] = []
+        self.agents: list[Agent] = []
+        self.tool_stats: dict[str, dict[str, int]] = {}
+        self.treated_ids: list[int] = []
 
         self._init_agents(memory_enabled)
         self._seed_money()
@@ -121,7 +121,7 @@ class Simulation:
         # Every place pays its (flat, rarely-raised) wage to workers on shift,
         # from business cash. This is the wage channel that section 6 finds
         # does not scale with revenue.
-        on_shift: Dict[int, List[Agent]] = {}
+        on_shift: dict[int, list[Agent]] = {}
         for a in self.agents:
             if a.on_shift_at is not None:
                 on_shift.setdefault(a.on_shift_at, []).append(a)
@@ -129,8 +129,11 @@ class Simulation:
             place = self.world.places[place_id]
             for w in workers:
                 self.ledger.transfer(
-                    self.pulse, money.biz_cash(place_id), money.agent_wallet(w.agent_id),
-                    place.wage_per_shift, "wage",
+                    self.pulse,
+                    money.biz_cash(place_id),
+                    money.agent_wallet(w.agent_id),
+                    place.wage_per_shift,
+                    "wage",
                 )
 
     def _record_tool(self, name: str, ok: bool) -> None:
@@ -170,7 +173,13 @@ class Simulation:
                     wallet = self.ledger.balance(money.agent_wallet(a.agent_id))
                     bank = self.ledger.balance(money.agent_bank(a.agent_id))
                     result.panel.append(
-                        {"pulse": p, "agent_id": a.agent_id, "wallet": wallet, "bank": bank, "wealth": wallet + bank}
+                        {
+                            "pulse": p,
+                            "agent_id": a.agent_id,
+                            "wallet": wallet,
+                            "bank": bank,
+                            "wealth": wallet + bank,
+                        }
                     )
 
         result.tool_stats = self.tool_stats

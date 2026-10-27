@@ -10,11 +10,11 @@ Two registry sources are supported:
                   passed in as ``places``; priced menus are synthesised on top
                   of the real geography (OSM has no prices).
 """
+
 from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 CATEGORIES = [
     "restaurant",
@@ -48,8 +48,8 @@ class Place:
     category: str
     x: float
     y: float
-    menu: List[MenuItem] = field(default_factory=list)
-    owner_id: Optional[int] = None
+    menu: list[MenuItem] = field(default_factory=list)
+    owner_id: int | None = None
     wage_per_shift: int = 0
     revenue: int = 0
     n_transactions: int = 0
@@ -58,16 +58,16 @@ class Place:
     def priced(self) -> bool:
         return len(self.menu) > 0
 
-    def cheapest(self) -> Optional[MenuItem]:
+    def cheapest(self) -> MenuItem | None:
         return min(self.menu, key=lambda m: m.price) if self.menu else None
 
 
-def _distance(a: Tuple[float, float], b: Tuple[float, float]) -> float:
+def _distance(a: tuple[float, float], b: tuple[float, float]) -> float:
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
 
 def attach_synthetic_menus(
-    places: List[Place],
+    places: list[Place],
     rng: random.Random,
     target_items: int = TARGET_MENU_ITEMS,
     priced_fraction: float = N_PRICED_PLACES / N_PLACES,
@@ -93,7 +93,7 @@ def attach_synthetic_menus(
         place.wage_per_shift = rng.randint(300, 900)
 
 
-def build_synthetic_registry(rng: random.Random) -> List[Place]:
+def build_synthetic_registry(rng: random.Random) -> list[Place]:
     places = [
         Place(
             place_id=pid,
@@ -108,21 +108,21 @@ def build_synthetic_registry(rng: random.Random) -> List[Place]:
 
 
 class World:
-    def __init__(self, rng: random.Random, places: Optional[List[Place]] = None) -> None:
+    def __init__(self, rng: random.Random, places: list[Place] | None = None) -> None:
         self.rng = rng
         source = places if places is not None else build_synthetic_registry(rng)
-        self.places: Dict[int, Place] = {p.place_id: p for p in source}
+        self.places: dict[int, Place] = {p.place_id: p for p in source}
 
     def total_menu_items(self) -> int:
         return sum(len(p.menu) for p in self.places.values())
 
-    def priced_places(self) -> List[Place]:
+    def priced_places(self) -> list[Place]:
         return [p for p in self.places.values() if p.priced]
 
-    def places_within(self, pos: Tuple[float, float], radius: float = VISIBILITY_RADIUS_M) -> List[Place]:
+    def places_within(self, pos: tuple[float, float], radius: float = VISIBILITY_RADIUS_M) -> list[Place]:
         return [p for p in self.places.values() if _distance(pos, (p.x, p.y)) <= radius]
 
-    def nearest_priced(self, pos: Tuple[float, float]) -> Optional[Place]:
+    def nearest_priced(self, pos: tuple[float, float]) -> Place | None:
         priced = self.priced_places()
         if not priced:
             return None

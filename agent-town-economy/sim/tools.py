@@ -8,16 +8,17 @@ reconstruction of the four categories (navigation / economy / memory / social)
 and are marked INFERRED. Every call returns a ToolResult so per-tool success
 rates (section 9) can be measured.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from . import money
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .engine import Simulation
     from .agents import Agent
+    from .engine import Simulation
 
 # Category map. Names marked INFERRED are not spelled out in the paper.
 TOOL_CATEGORIES = {
@@ -61,31 +62,31 @@ class ToolResult:
 class Tools:
     """Stateless dispatcher operating on the simulation's world + ledger."""
 
-    def __init__(self, sim: "Simulation") -> None:
+    def __init__(self, sim: Simulation) -> None:
         self.sim = sim
 
     # -- navigation -------------------------------------------------------
-    def observe_place(self, agent: "Agent") -> ToolResult:
+    def observe_place(self, agent: Agent) -> ToolResult:
         place = self.sim.world.nearest_priced(agent.pos)
         return ToolResult(place is not None)
 
-    def observe_agents(self, agent: "Agent") -> ToolResult:
+    def observe_agents(self, agent: Agent) -> ToolResult:
         return ToolResult(True)
 
-    def go_to(self, agent: "Agent", place_id: Optional[int] = None) -> ToolResult:
+    def go_to(self, agent: Agent, place_id: int | None = None) -> ToolResult:
         if place_id is None or place_id not in self.sim.world.places:
             return ToolResult(False, "no target")
         p = self.sim.world.places[place_id]
         agent.x, agent.y = p.x, p.y
         return ToolResult(True)
 
-    def wander(self, agent: "Agent") -> ToolResult:
+    def wander(self, agent: Agent) -> ToolResult:
         agent.x += self.sim.rng.uniform(-50, 50)
         agent.y += self.sim.rng.uniform(-50, 50)
         return ToolResult(True)
 
     # -- economy ----------------------------------------------------------
-    def buy_food(self, agent: "Agent", buyer_external: bool = False) -> ToolResult:
+    def buy_food(self, agent: Agent, buyer_external: bool = False) -> ToolResult:
         place = self.sim.world.nearest_priced(agent.pos) or self.sim.world.nearest_priced((0, 0))
         if place is None:
             return ToolResult(False, "no place")
@@ -100,7 +101,7 @@ class Tools:
             place.n_transactions += 1
         return ToolResult(ok, "" if ok else "insufficient funds")
 
-    def set_price(self, agent: "Agent") -> ToolResult:
+    def set_price(self, agent: Agent) -> ToolResult:
         if agent.owns_business is None:
             return ToolResult(False, "not an owner")
         place = self.sim.world.places[agent.owns_business]
@@ -111,20 +112,20 @@ class Tools:
         item.reprices += 1
         return ToolResult(True)
 
-    def start_shift(self, agent: "Agent") -> ToolResult:
+    def start_shift(self, agent: Agent) -> ToolResult:
         place = self.sim.world.nearest_priced(agent.pos)
         if place is None:
             return ToolResult(False, "no workplace")
         agent.on_shift_at = place.place_id
         return ToolResult(True)
 
-    def end_shift(self, agent: "Agent") -> ToolResult:
+    def end_shift(self, agent: Agent) -> ToolResult:
         if agent.on_shift_at is None:
             return ToolResult(False, "not on shift")
         agent.on_shift_at = None
         return ToolResult(True)
 
-    def pay_agent(self, owner: "Agent", worker: "Agent") -> ToolResult:
+    def pay_agent(self, owner: Agent, worker: Agent) -> ToolResult:
         if owner.owns_business is None:
             return ToolResult(False, "not an owner")
         place = self.sim.world.places[owner.owns_business]
@@ -134,40 +135,40 @@ class Tools:
         )
         return ToolResult(ok, "" if ok else "business cannot cover wage")
 
-    def set_wage(self, agent: "Agent") -> ToolResult:
+    def set_wage(self, agent: Agent) -> ToolResult:
         if agent.owns_business is None:
             return ToolResult(False, "not an owner")
         place = self.sim.world.places[agent.owns_business]
         place.wage_per_shift = int(place.wage_per_shift * self.sim.rng.uniform(1.05, 1.25))
         return ToolResult(True)
 
-    def deposit(self, agent: "Agent") -> ToolResult:
+    def deposit(self, agent: Agent) -> ToolResult:
         w = money.agent_wallet(agent.agent_id)
         amt = self.sim.ledger.balance(w) // 2
         ok = self.sim.ledger.transfer(self.sim.pulse, w, money.agent_bank(agent.agent_id), amt, "deposit")
         return ToolResult(ok)
 
-    def withdraw(self, agent: "Agent") -> ToolResult:
+    def withdraw(self, agent: Agent) -> ToolResult:
         b = money.agent_bank(agent.agent_id)
         amt = self.sim.ledger.balance(b) // 2
         ok = self.sim.ledger.transfer(self.sim.pulse, b, money.agent_wallet(agent.agent_id), amt, "withdraw")
         return ToolResult(ok)
 
     # -- memory -----------------------------------------------------------
-    def write_memory(self, agent: "Agent", text: str = "note") -> ToolResult:
+    def write_memory(self, agent: Agent, text: str = "note") -> ToolResult:
         return ToolResult(agent.memory.write(self.sim.pulse, text))
 
-    def search_memory(self, agent: "Agent", query: str = "note") -> ToolResult:
+    def search_memory(self, agent: Agent, query: str = "note") -> ToolResult:
         if not agent.memory.enabled:
             return ToolResult(False, "memory disabled")
         agent.memory.search(query)
         return ToolResult(True)
 
-    def reflect(self, agent: "Agent") -> ToolResult:
+    def reflect(self, agent: Agent) -> ToolResult:
         return ToolResult(agent.memory.reflect())
 
     # -- social -----------------------------------------------------------
-    def invite_to_talk(self, agent: "Agent") -> ToolResult:
+    def invite_to_talk(self, agent: Agent) -> ToolResult:
         others = [a for a in self.sim.agents if a.agent_id != agent.agent_id]
         if not others:
             return ToolResult(False, "no one nearby")
@@ -179,18 +180,18 @@ class Tools:
         agent.in_conversations += 1
         return ToolResult(True)
 
-    def accept_invite(self, agent: "Agent") -> ToolResult:
+    def accept_invite(self, agent: Agent) -> ToolResult:
         if agent.in_conversations == 0:
             return ToolResult(False, "no pending invite")
         return ToolResult(True)
 
-    def leave_conversation(self, agent: "Agent") -> ToolResult:
+    def leave_conversation(self, agent: Agent) -> ToolResult:
         if agent.in_conversations == 0:
             return ToolResult(False, "not in a conversation")
         agent.in_conversations -= 1
         return ToolResult(True)
 
-    def send_message(self, agent: "Agent") -> ToolResult:
+    def send_message(self, agent: Agent) -> ToolResult:
         if agent.in_conversations == 0:
             return ToolResult(False, "not in a conversation")
         return ToolResult(True)

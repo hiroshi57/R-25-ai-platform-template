@@ -13,17 +13,19 @@ gpt-oss families) spend most of the token budget on internal reasoning, so
 (finish_reason=length, completion_tokens=0) -- exactly the paper's gpt-oss
 observation that raising the output budget cut malformed generations sharply.
 """
+
 from __future__ import annotations
 
 import json
 import urllib.error
 import urllib.request
-from typing import Optional
+
+from .net import require_http_url
 
 SYSTEM_PROMPT = (
     "You are one resident agent in a small tourist-town economy. "
     "On each turn choose exactly ONE action to take. "
-    "Reply with ONLY a compact JSON object: {\"tool\": \"<tool_name>\"}. "
+    'Reply with ONLY a compact JSON object: {"tool": "<tool_name>"}. '
     "Do not add prose."
 )
 
@@ -33,7 +35,7 @@ class OpenAICompatibleBackend:
         self,
         base_url: str,
         model: str,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         timeout: float = 60.0,
         temperature: float = 0.0,
         max_tokens: int = 1024,
@@ -60,7 +62,9 @@ class OpenAICompatibleBackend:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
-        req = urllib.request.Request(self.url, data=body, headers=headers)
-        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+        url = require_http_url(self.url, what="LLM endpoint URL")
+        # 以下2行の noqa の理由: スキームは require_http_url で http(s) に限定済み
+        req = urllib.request.Request(url, data=body, headers=headers)  # noqa: S310
+        with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
             data = json.load(resp)
         return data["choices"][0]["message"]["content"]

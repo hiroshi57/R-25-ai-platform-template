@@ -4,16 +4,15 @@ Gini, wealth-rank persistence, quintile mobility, wage pass-through, the exact
 extensive/intensive margin decomposition, and the marginal propensity to
 consume out of a windfall.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
 
-from sim import money
 from sim.engine import RunResult
 
 
-def gini(values: List[float]) -> float:
+def gini(values: list[float]) -> float:
     xs = sorted(v for v in values if v is not None)
     n = len(xs)
     if n == 0:
@@ -25,7 +24,7 @@ def gini(values: List[float]) -> float:
     return (2 * cum) / (n * total) - (n + 1) / n
 
 
-def _rank(xs: List[float]) -> List[float]:
+def _rank(xs: list[float]) -> list[float]:
     order = sorted(range(len(xs)), key=lambda i: xs[i])
     ranks = [0.0] * len(xs)
     i = 0
@@ -40,7 +39,7 @@ def _rank(xs: List[float]) -> List[float]:
     return ranks
 
 
-def spearman(x: List[float], y: List[float]) -> float:
+def spearman(x: list[float], y: list[float]) -> float:
     if len(x) != len(y) or len(x) < 2:
         return float("nan")
     rx, ry = _rank(x), _rank(y)
@@ -52,20 +51,20 @@ def spearman(x: List[float], y: List[float]) -> float:
     return num / (dx * dy) if dx and dy else float("nan")
 
 
-def _quintile(sorted_vals: List[float], v: float) -> int:
+def _quintile(sorted_vals: list[float], v: float) -> int:
     n = len(sorted_vals)
     idx = sum(1 for s in sorted_vals if s < v)
     return min(4, int(5 * idx / n)) if n else 0
 
 
 def _wealth_by_pulse(result: RunResult):
-    by_pulse: Dict[int, Dict[int, int]] = defaultdict(dict)
+    by_pulse: dict[int, dict[int, int]] = defaultdict(dict)
     for r in result.panel:
         by_pulse[r["pulse"]][r["agent_id"]] = r["wealth"]
     return by_pulse
 
 
-def compute_metrics(result: RunResult) -> Dict[str, object]:
+def compute_metrics(result: RunResult) -> dict[str, object]:
     by_pulse = _wealth_by_pulse(result)
     pulses = sorted(by_pulse)
     first, last = pulses[0], pulses[-1]
@@ -99,8 +98,9 @@ def compute_metrics(result: RunResult) -> Dict[str, object]:
     }
 
 
-def margin_decomposition(low: RunResult, high: RunResult) -> Dict[str, float]:
+def margin_decomposition(low: RunResult, high: RunResult) -> dict[str, float]:
     """Exact extensive x intensive decomposition of the revenue response."""
+
     def stats(r: RunResult):
         trading = [p for p in r.place_summary if p["n_transactions"] > 0]
         rev = sum(p["revenue"] for p in r.place_summary)
@@ -120,7 +120,7 @@ def margin_decomposition(low: RunResult, high: RunResult) -> Dict[str, float]:
     }
 
 
-def marginal_propensity_to_consume(result: RunResult) -> Optional[Dict[str, float]]:
+def marginal_propensity_to_consume(result: RunResult) -> dict[str, float] | None:
     """Treated-vs-control excess spending after the grant (section 7)."""
     if result.grant_pulse is None or not result.treated_ids:
         return None
@@ -128,7 +128,7 @@ def marginal_propensity_to_consume(result: RunResult) -> Optional[Dict[str, floa
     grant = grant_amounts[0] if grant_amounts else 0
     treated = set(result.treated_ids)
 
-    spend: Dict[int, int] = defaultdict(int)
+    spend: dict[int, int] = defaultdict(int)
     for e in result.ledger_entries:
         if e["kind"] == "purchase" and int(e["pulse"]) >= result.grant_pulse:
             src = str(e["src"])
@@ -136,8 +136,14 @@ def marginal_propensity_to_consume(result: RunResult) -> Optional[Dict[str, floa
                 aid = int(src.split(":")[1])
                 spend[aid] += int(e["amount"])
 
-    n_total = 1 + max((int(str(e["src"]).split(":")[1]) for e in result.ledger_entries
-                        if str(e["src"]).startswith("agent:")), default=0)
+    n_total = 1 + max(
+        (
+            int(str(e["src"]).split(":")[1])
+            for e in result.ledger_entries
+            if str(e["src"]).startswith("agent:")
+        ),
+        default=0,
+    )
     t_spend = [spend[a] for a in range(n_total) if a in treated]
     c_spend = [spend[a] for a in range(n_total) if a not in treated]
     mean_t = sum(t_spend) / len(t_spend) if t_spend else 0.0

@@ -1,9 +1,7 @@
 """Metric sanity + reproduction of the paper's qualitative mechanisms."""
+
 import random
 
-from sim.conditions import get_condition, tourism_high, tourism_low
-from sim.engine import Simulation
-from sim.policy import HeuristicPolicy
 from analysis.metrics import (
     compute_metrics,
     gini,
@@ -11,6 +9,9 @@ from analysis.metrics import (
     marginal_propensity_to_consume,
     spearman,
 )
+from sim.conditions import get_condition, tourism_high, tourism_low
+from sim.engine import Simulation
+from sim.policy import HeuristicPolicy
 
 
 def _run(condition, seed=1, pulses=120, mpc=0.035):

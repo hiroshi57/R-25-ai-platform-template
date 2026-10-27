@@ -12,6 +12,7 @@ presence, is what matters.
 
     python experiments/wiki_vs_flat.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,7 +44,9 @@ def lever_usage(result):
 def run(mode: str, condition_name: str, args) -> dict:
     policy = WikiPolicy(random.Random(args.seed + 7))
     sim = Simulation(
-        get_condition(condition_name), policy, seed=args.seed,
+        get_condition(condition_name),
+        policy,
+        seed=args.seed,
         n_agents=args.n_agents,
         memory_factory=lambda: WikiMemory(mode=mode),
     )

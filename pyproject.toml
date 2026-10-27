@@ -42,3 +42,7 @@ ignore = ["S101"]   # テストの assert は許可
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "E501"]
+# シミュレーションの乱数は暗号用途ではない（再現性のため seed を固定して使う）
+"agent-town-economy/**" = ["S311"]
+# SVG/HTML を組み立てる文字列リテラルは、折り返すと読めなくなる
+"agent-town-economy/dashboard/build_dashboard.py" = ["E501"]

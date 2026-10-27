@@ -1,11 +1,11 @@
 """The platform's core guarantee: money is conserved, exactly, always."""
+
 import random
 
-from sim import money
+from analysis.validate import validate
 from sim.conditions import baseline, wealth_grant
 from sim.engine import Simulation
 from sim.policy import HeuristicPolicy
-from analysis.validate import validate
 
 
 def _run(condition, seed=1, pulses=60):

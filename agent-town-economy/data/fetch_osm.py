@@ -6,6 +6,7 @@ then loaded offline by ``run.py --osm-geojson``.
     python data/fetch_osm.py                       # -> data/lakeside.geojson
     python data/fetch_osm.py --out data/town.geojson
 """
+
 from __future__ import annotations
 
 import argparse

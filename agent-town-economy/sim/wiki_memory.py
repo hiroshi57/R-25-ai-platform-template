@@ -15,11 +15,11 @@ the wiki traverses that path and lets the policy actually pull the lever.
 It keeps the write/search/reflect interface of ``agents.Memory`` so the existing
 tools keep working, and adds ``observe`` / ``retrieve_actions`` for the policy.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
 
 # Action concepts an owner/worker can act on (the levers the paper found unused).
 ACTION_CONCEPTS = {"raise_price", "raise_wage", "buy_food"}
@@ -28,7 +28,7 @@ ACTION_CONCEPTS = {"raise_price", "raise_wage", "buy_food"}
 CAUSAL_RELATIONS = {"leads_to", "enables"}
 
 
-def _default_playbook() -> List[Tuple[str, str, str]]:
+def _default_playbook() -> list[tuple[str, str, str]]:
     """The organizational operating knowledge, encoded as a small LLM Wiki.
 
     These are the connections a flat memory cannot represent and therefore
@@ -54,9 +54,9 @@ class WikiMemory:
     mode: str = "wiki"
     hops: int = 3
     enabled: bool = True
-    edges: Dict[str, List[Tuple[str, str]]] = field(default_factory=lambda: defaultdict(list))
-    node_type: Dict[str, str] = field(default_factory=dict)
-    passages: List[Tuple[int, str, List[str]]] = field(default_factory=list)
+    edges: dict[str, list[tuple[str, str]]] = field(default_factory=lambda: defaultdict(list))
+    node_type: dict[str, str] = field(default_factory=dict)
+    passages: list[tuple[int, str, list[str]]] = field(default_factory=list)
     writes: int = 0
     searches: int = 0
     reflects: int = 0
@@ -91,7 +91,7 @@ class WikiMemory:
         return True
 
     # -- LLM-Wiki additions ----------------------------------------------
-    def observe(self, pulse: int, concepts: List[str], text: str = "") -> bool:
+    def observe(self, pulse: int, concepts: list[str], text: str = "") -> bool:
         """Record a passage node, cross-linked to the situation concepts it
         mentions (the cross-layer hyper-edges of the Wiki Graph schema)."""
         if not self.enabled:
@@ -106,18 +106,18 @@ class WikiMemory:
         self.writes += 1
         return True
 
-    def retrieve_actions(self, situation: List[str]) -> Set[str]:
+    def retrieve_actions(self, situation: list[str]) -> set[str]:
         """Multi-hop retrieval: which action concepts are reachable from the
         current situation along causal edges? A flat store cannot traverse, so
         it returns nothing -- reproducing the "memory doesn't matter" result."""
         if not self.enabled or self.mode == "flat":
             return set()
         self.searches += 1
-        seen: Set[str] = set(situation)
-        frontier: Set[str] = set(situation)
-        found: Set[str] = set()
+        seen: set[str] = set(situation)
+        frontier: set[str] = set(situation)
+        found: set[str] = set()
         for _ in range(self.hops):
-            nxt: Set[str] = set()
+            nxt: set[str] = set()
             for c in frontier:
                 for rel, dst in self.edges.get(c, []):
                     if rel in CAUSAL_RELATIONS and dst not in seen:
@@ -130,7 +130,7 @@ class WikiMemory:
             frontier = nxt
         return found
 
-    def reasoning_path(self, start: str, hops: int = 4) -> List[str]:
+    def reasoning_path(self, start: str, hops: int = 4) -> list[str]:
         """Return one causal chain from a start concept (for explanation/audit)."""
         path = [start]
         cur = start

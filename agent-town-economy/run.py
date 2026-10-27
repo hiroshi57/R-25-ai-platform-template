@@ -16,6 +16,7 @@ Examples
     python run.py --condition baseline --pulses 60 \
         --llm-base-url https://api.openai.com/v1 --llm-model gpt-4o-mini
 """
+
 from __future__ import annotations
 
 import argparse
@@ -70,7 +71,9 @@ def run_one(args, condition_name, seed):
     condition = get_condition(condition_name)
     policy = _make_policy(args, seed)
     sim = Simulation(
-        condition, policy, seed=seed,
+        condition,
+        policy,
+        seed=seed,
         n_agents=args.n_agents,
         memory_enabled=not args.no_memory,
         places=_load_places(args, seed),
@@ -105,8 +108,12 @@ def main() -> int:
     ap.add_argument("--llm-base-url", default=None, help="OpenAI-compatible base URL (enables LLM policy)")
     ap.add_argument("--llm-model", default="gpt-4o-mini")
     ap.add_argument("--llm-temperature", type=float, default=0.0)
-    ap.add_argument("--llm-max-tokens", type=int, default=1024,
-                    help="reasoning models need a large budget or replies come back empty")
+    ap.add_argument(
+        "--llm-max-tokens",
+        type=int,
+        default=1024,
+        help="reasoning models need a large budget or replies come back empty",
+    )
     args = ap.parse_args()
 
     if args.sweep:

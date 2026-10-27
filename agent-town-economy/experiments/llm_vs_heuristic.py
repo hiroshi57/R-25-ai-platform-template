@@ -10,6 +10,7 @@ Backend: a self-hosted Ollama server (OpenAI-compatible, no key, no quota).
     python experiments/llm_vs_heuristic.py --geojson data/lakeside.geojson \
         --n-agents 10 --pulses 24 --model qwen2.5:0.5b-instruct
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,8 +46,11 @@ def run(policy_kind, condition_name, args, places):
     heuristic = HeuristicPolicy(random.Random(seed + 7), mpc=args.mpc)
     if policy_kind == "llm":
         backend = OpenAICompatibleBackend(
-            base_url=args.base_url, model=args.model, api_key="ollama",
-            max_tokens=args.max_tokens, temperature=0.0,
+            base_url=args.base_url,
+            model=args.model,
+            api_key="ollama",
+            max_tokens=args.max_tokens,
+            temperature=0.0,
         )
         policy = LLMPolicy(backend, fallback=heuristic)
     else:
@@ -54,8 +58,11 @@ def run(policy_kind, condition_name, args, places):
 
     t0 = time.time()
     sim = Simulation(
-        get_condition(condition_name), policy, seed=seed,
-        n_agents=args.n_agents, places=places,
+        get_condition(condition_name),
+        policy,
+        seed=seed,
+        n_agents=args.n_agents,
+        places=places,
     )
     result = sim.run(args.pulses)
     dt = time.time() - t0

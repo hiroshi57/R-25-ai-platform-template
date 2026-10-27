@@ -4,10 +4,10 @@ Each condition only changes world state / shocks; the agent specification is
 held fixed. Tourist arrival rate is per sim-hour == per pulse (a pulse is 60
 simulated minutes).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -22,16 +22,16 @@ class Condition:
     name: str
     base_rate: float
     # Optional per-pulse rate overrides (used by the transient shock).
-    schedule: Dict[int, float] = field(default_factory=dict)
-    grant: Optional[GrantSpec] = None
+    schedule: dict[int, float] = field(default_factory=dict)
+    grant: GrantSpec | None = None
 
     def rate_at(self, pulse: int) -> float:
         return self.schedule.get(pulse, self.base_rate)
 
 
-def _shock_schedule(low: float, high: float, start: int, end: int) -> Dict[int, float]:
+def _shock_schedule(low: float, high: float, start: int, end: int) -> dict[int, float]:
     # low -> high -> low across the shock window (paper: pulses 84-143).
-    sched: Dict[int, float] = {}
+    sched: dict[int, float] = {}
     for p in range(start, end + 1):
         sched[p] = high
     return sched
@@ -66,8 +66,7 @@ def wealth_grant() -> Condition:
 
 
 ALL_CONDITIONS = {
-    c.name: c
-    for c in [baseline(), tourism_low(), tourism_high(), tourism_shock(), wealth_grant()]
+    c.name: c for c in [baseline(), tourism_low(), tourism_high(), tourism_shock(), wealth_grant()]
 }
 
 

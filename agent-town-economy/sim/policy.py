@@ -16,18 +16,19 @@ observation, calls the backend, parses+validates the returned tool name, and
 falls back to the heuristic on any malformed output -- so a bad generation is
 forfeited, never fatal (paper section 5).
 """
+
 from __future__ import annotations
 
 import json
 import random
 import re
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable
 
 from . import money
 from .agents import Agent
 from .tools import TOOL_CATEGORIES
 
-Action = Tuple[str, Dict[str, object]]
+Action = tuple[str, dict[str, object]]
 
 
 class HeuristicPolicy:
@@ -82,7 +83,7 @@ def _build_observation(agent: Agent, sim) -> str:
     )
 
 
-def _parse_tool_name(text: str) -> Optional[str]:
+def _parse_tool_name(text: str) -> str | None:
     text = (text or "").strip()
     # Try JSON first: {"tool": "..."}
     try:
@@ -111,15 +112,20 @@ class WikiPolicy:
     is therefore the single variable between the two arms.
     """
 
-    def __init__(self, rng: random.Random, act_prob: float = 0.35,
-                 spend_prob: float = 0.5, high_demand_rate: float = 3.0,
-                 base_mpc: float = 0.035) -> None:
+    def __init__(
+        self,
+        rng: random.Random,
+        act_prob: float = 0.35,
+        spend_prob: float = 0.5,
+        high_demand_rate: float = 3.0,
+        base_mpc: float = 0.035,
+    ) -> None:
         self.rng = rng
         self.act_prob = act_prob
         self.spend_prob = spend_prob
         self.high_demand_rate = high_demand_rate
         self.base_mpc = base_mpc
-        self._last_wallet: Dict[int, int] = {}
+        self._last_wallet: dict[int, int] = {}
 
     def _situation(self, agent: Agent, sim) -> set:
         s = set()
@@ -171,7 +177,7 @@ class LLMPolicy:
     def __init__(
         self,
         backend: Callable[[str], str],
-        fallback: Optional[HeuristicPolicy] = None,
+        fallback: HeuristicPolicy | None = None,
     ) -> None:
         self.backend = backend
         self.fallback = fallback
@@ -189,5 +195,5 @@ class LLMPolicy:
             if self.fallback is not None:
                 return self.fallback.choose(agent, sim)
             return ("observe_place", {})
-        kwargs: Dict[str, object] = {"text": "pulse-note"} if name == "write_memory" else {}
+        kwargs: dict[str, object] = {"text": "pulse-note"} if name == "write_memory" else {}
         return (name, kwargs)
