@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 PRICING_AS_OF = "unverified"   # 一次情報で検証した基準日を入れる(未検証のため空扱い)
 PRICING_SOURCE = {
@@ -50,19 +49,19 @@ class ModelEntry:
 
 # model ID は「日付サフィックス無しの別名」だと 404 になる提供元があるため、
 # 各社が別名として公式に受け付ける -latest 形式を既定にしている。
-DEFAULT_CATALOG: List[ModelEntry] = [
+DEFAULT_CATALOG: list[ModelEntry] = [
     ModelEntry("claude", "claude-3-5-sonnet-latest", 0.003, 0.015, 900, 0.93, "ANTHROPIC_API_KEY"),
     ModelEntry("openai", "gpt-4o", 0.0025, 0.010, 1100, 0.92, "OPENAI_API_KEY"),
     ModelEntry("gemini", "gemini-1.5-pro", 0.00125, 0.005, 1300, 0.88, "GOOGLE_API_KEY"),
 ]
 
 
-def _from_json(path: str) -> List[ModelEntry]:
-    with open(path, "r", encoding="utf-8") as fh:
+def _from_json(path: str) -> list[ModelEntry]:
+    with open(path, encoding="utf-8") as fh:
         raw = json.load(fh)
     if not isinstance(raw, list):
         raise ValueError(f"pricing file must be a JSON array: {path}")
-    entries: List[ModelEntry] = []
+    entries: list[ModelEntry] = []
     for item in raw:
         entries.append(ModelEntry(
             name=item["name"], model=item["model"],
@@ -76,14 +75,14 @@ def _from_json(path: str) -> List[ModelEntry]:
     return entries
 
 
-def load_catalog(path: Optional[str] = None) -> Dict[str, ModelEntry]:
+def load_catalog(path: str | None = None) -> dict[str, ModelEntry]:
     """カタログを読み込む. AI_PLATFORM_PRICING_FILE があれば実単価で上書きする."""
     path = path or os.getenv("AI_PLATFORM_PRICING_FILE") or ""
     entries = _from_json(path) if path else DEFAULT_CATALOG
     return {e.name: e for e in entries}
 
 
-def unverified_providers(catalog: Optional[Dict[str, ModelEntry]] = None) -> List[str]:
+def unverified_providers(catalog: dict[str, ModelEntry] | None = None) -> list[str]:
     """単価が未検証のプロバイダ名。UI/レポートで警告表示するために使う."""
     cat = catalog if catalog is not None else load_catalog()
     return sorted(n for n, e in cat.items() if not e.verified)

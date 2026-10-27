@@ -1,0 +1,2 @@
+# シェルスクリプトは LF 固定（CRLF だと bash が実行できない。.claude/hooks/*.sh など）
+*.sh text eol=lf

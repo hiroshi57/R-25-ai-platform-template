@@ -2,11 +2,16 @@
 import json
 import logging
 
-import pytest
-
 from core import (
-    Settings, RoutingStrategy, build_providers, build_provider, provider_mode,
-    configure_logging, new_request_id, get_request_id, MockProvider,
+    MockProvider,
+    RoutingStrategy,
+    Settings,
+    build_provider,
+    build_providers,
+    configure_logging,
+    get_request_id,
+    new_request_id,
+    provider_mode,
 )
 from core.real_providers import AnthropicProvider
 

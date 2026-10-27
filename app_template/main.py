@@ -16,9 +16,20 @@ import logging
 import os
 
 from core import (
-    APIKeyStore, LLMRouter, NoProviderAvailable, RateLimiter, RoutingStrategy, Settings,
-    build_providers, provider_mode, configure_logging, new_request_id, get_request_id,
-    set_request_id, generate_api_key, summarize,
+    APIKeyStore,
+    LLMRouter,
+    NoProviderAvailable,
+    RateLimiter,
+    RoutingStrategy,
+    Settings,
+    build_providers,
+    configure_logging,
+    generate_api_key,
+    get_request_id,
+    new_request_id,
+    provider_mode,
+    set_request_id,
+    summarize,
 )
 
 logger = logging.getLogger("ai_platform.app")
@@ -110,7 +121,7 @@ def create_app():
                 req.prompt, strategy=req.strategy, max_output_tokens=req.max_output_tokens)
         except NoProviderAvailable as exc:
             logger.error("all providers failed: %s", exc)
-            raise HTTPException(status_code=503, detail="all upstream providers unavailable")
+            raise HTTPException(status_code=503, detail="all upstream providers unavailable") from exc
         _TENANT_METRICS.setdefault(tenant, []).append(metric)
         return {
             "request_id": get_request_id(), "tenant": tenant, "text": c.text,

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import html
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
 
 
 def _e(v) -> str:
@@ -23,8 +22,8 @@ def _fmt_usd(v: float) -> str:
     return f"${v:,.4f}"
 
 
-def build_html_report(summary: Dict, provider_modes: Optional[Dict[str, str]] = None,
-                      tenant: str = "-", unverified: Optional[List[str]] = None) -> str:
+def build_html_report(summary: dict, provider_modes: dict[str, str] | None = None,
+                      tenant: str = "-", unverified: list[str] | None = None) -> str:
     modes = provider_modes or {}
     prov_rows = ""
     total_cost = float(summary.get("total_cost_usd", 0) or 0)
@@ -55,6 +54,10 @@ def build_html_report(summary: Dict, provider_modes: Optional[Dict[str, str]] = 
                     f'実単価を注入してください。</div>')
 
     err_rate = float(summary.get("error_rate", 0) or 0) * 100
+    p50 = float(summary.get("p50_latency_ms", 0) or 0)
+    p95 = float(summary.get("p95_latency_ms", 0) or 0)
+    p99 = float(summary.get("p99_latency_ms", 0) or 0)
+    fallback_rate = float(summary.get("fallback_rate", 0) or 0) * 100
     generated = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
     return f"""<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
@@ -68,7 +71,8 @@ th,td{{border:1px solid #dde;padding:8px 10px;text-align:left}} th{{background:#
 td.num{{text-align:right;font-variant-numeric:tabular-nums}}
 td.empty{{text-align:center;color:#888}}
 .metrics{{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}}
-.metric{{flex:1;min-width:140px;background:#fff;border:1px solid #e3e7f5;border-radius:8px;padding:12px;text-align:center}}
+.metric{{flex:1;min-width:140px;background:#fff;border:1px solid #e3e7f5;border-radius:8px;
+padding:12px;text-align:center}}
 .val{{font-size:24px;font-weight:bold;color:#4361ee}}
 .banner{{padding:10px 12px;border-radius:8px;margin:8px 0;font-size:13px}}
 .banner.warn{{background:#fff6e0;border:1px solid #f0c36d}}
@@ -81,10 +85,10 @@ td.empty{{text-align:center;color:#888}}
 <div class="metrics">
   <div class="metric"><div>総リクエスト</div><div class="val">{_e(summary.get("count", 0))}</div></div>
   <div class="metric"><div>総コスト(USD)</div><div class="val">{_fmt_usd(total_cost)}</div></div>
-  <div class="metric"><div>p50レイテンシ</div><div class="val">{float(summary.get("p50_latency_ms", 0) or 0):.0f}ms</div></div>
-  <div class="metric"><div>p95レイテンシ</div><div class="val">{float(summary.get("p95_latency_ms", 0) or 0):.0f}ms</div></div>
-  <div class="metric"><div>p99レイテンシ</div><div class="val">{float(summary.get("p99_latency_ms", 0) or 0):.0f}ms</div></div>
-  <div class="metric"><div>フォールバック率</div><div class="val">{float(summary.get("fallback_rate", 0) or 0) * 100:.1f}%</div></div>
+  <div class="metric"><div>p50レイテンシ</div><div class="val">{p50:.0f}ms</div></div>
+  <div class="metric"><div>p95レイテンシ</div><div class="val">{p95:.0f}ms</div></div>
+  <div class="metric"><div>p99レイテンシ</div><div class="val">{p99:.0f}ms</div></div>
+  <div class="metric"><div>フォールバック率</div><div class="val">{fallback_rate:.1f}%</div></div>
   <div class="metric"><div>エラー率</div><div class="val">{err_rate:.1f}%</div></div>
 </div>
 <h2>プロバイダ別</h2>
