@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 import os
 import time
-from typing import Dict, List, Optional
 
 from .pricing import load_catalog
 from .providers import (
@@ -33,7 +32,7 @@ DEFAULT_TIMEOUT_SEC = float(os.getenv("AI_PLATFORM_PROVIDER_TIMEOUT_SEC", "30"))
 DEFAULT_MAX_RETRIES = int(os.getenv("AI_PLATFORM_PROVIDER_MAX_RETRIES", "1"))
 
 
-def _registry() -> Dict[str, Dict]:
+def _registry() -> dict[str, dict]:
     """カタログから {name: {"spec":..., "key_env":...}} を組み立てる."""
     return {
         name: {"spec": ProviderSpec.from_entry(e), "key_env": e.key_env}
@@ -154,7 +153,7 @@ def build_provider(name: str) -> BaseProvider:
     return cls(spec)                           # 実API
 
 
-def build_providers(names: Optional[List[str]] = None) -> Dict[str, BaseProvider]:
+def build_providers(names: list[str] | None = None) -> dict[str, BaseProvider]:
     registry = _registry()
     names = names if names is not None else sorted(registry)
     known = [n for n in names if n in registry]

@@ -1,4 +1,5 @@
 # 実行時に生成される成果物
 state/current.json
+state/cases.json
 runs/traces.jsonl
-artifacts/export.csv
+artifacts/

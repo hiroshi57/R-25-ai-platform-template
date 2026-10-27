@@ -1,7 +1,6 @@
 """認証とレート制限の検証."""
-import pytest
 
-from core import APIKeyStore, RateLimiter, generate_api_key
+from core import APIKeyStore, RateLimiter
 
 
 def test_api_key_resolves_tenant():

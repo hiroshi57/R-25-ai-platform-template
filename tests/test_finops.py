@@ -1,6 +1,5 @@
-import pytest
 
-from core import BudgetGuard, project_month_end, detect_cost_anomaly, RoutingStrategy
+from core import BudgetGuard, RoutingStrategy, detect_cost_anomaly, project_month_end
 
 
 def test_project_month_end():

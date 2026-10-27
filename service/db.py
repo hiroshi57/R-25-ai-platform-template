@@ -12,7 +12,6 @@ from __future__ import annotations
 import sqlite3
 import threading
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
 
 from core.observability import empty_summary, percentile
 
@@ -70,7 +69,7 @@ class ServiceDB:
     def log_metric(self, tenant_id: str, provider: str, model: str, strategy: str,
                    cost_usd: float, latency_ms: float, fell_back: bool, ok: bool,
                    input_tokens: int = 0, output_tokens: int = 0,
-                   created_at: Optional[str] = None) -> None:
+                   created_at: str | None = None) -> None:
         if not tenant_id:
             raise ValueError("tenant_id must be non-empty")
         with self._lock:
@@ -83,13 +82,13 @@ class ServiceDB:
                  created_at or _utcnow_iso()))
             self.conn.commit()
 
-    def _summarize_rows(self, rows: List[sqlite3.Row]) -> Dict:
+    def _summarize_rows(self, rows: list[sqlite3.Row]) -> dict:
         if not rows:
             return empty_summary()
         ok_rows = [r for r in rows if r["ok"]]
         # 失敗レコード(latency 0)を混ぜると p95 が実態より小さく出るため成功分のみ
         latencies = [r["latency_ms"] for r in ok_rows]
-        by: Dict[str, Dict] = {}
+        by: dict[str, dict] = {}
         for r in ok_rows:
             b = by.setdefault(r["provider"],
                               {"count": 0, "cost_usd": 0.0, "input_tokens": 0, "output_tokens": 0})
@@ -111,13 +110,13 @@ class ServiceDB:
             "by_provider": by,
         }
 
-    def summary(self, tenant_id: str) -> Dict:
+    def summary(self, tenant_id: str) -> dict:
         rows = self.conn.execute(
             "SELECT provider, cost_usd, latency_ms, fell_back, ok, input_tokens, output_tokens "
             "FROM metrics WHERE tenant_id=?", (tenant_id,)).fetchall()
         return self._summarize_rows(rows)
 
-    def month_to_date_cost(self, tenant_id: str, now: Optional[datetime] = None) -> float:
+    def month_to_date_cost(self, tenant_id: str, now: datetime | None = None) -> float:
         """当月分のコスト合計。FinOps の月次予測はこれを使う."""
         now = now or datetime.now(timezone.utc)
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -126,7 +125,7 @@ class ServiceDB:
             "WHERE tenant_id=? AND created_at >= ?", (tenant_id, start)).fetchone()
         return round(row["total"], 6)
 
-    def daily_costs(self, tenant_id: str, days: int = 30) -> List[float]:
+    def daily_costs(self, tenant_id: str, days: int = 30) -> list[float]:
         """直近 N 日の日次コスト(異常検知の入力)."""
         rows = self.conn.execute(
             "SELECT substr(created_at, 1, 10) AS d, SUM(cost_usd) AS c FROM metrics "
@@ -134,7 +133,7 @@ class ServiceDB:
             (tenant_id, days)).fetchall()
         return [round(r["c"], 6) for r in reversed(rows)]
 
-    def tenants(self) -> List[str]:
+    def tenants(self) -> list[str]:
         return [r["tenant_id"] for r in
                 self.conn.execute("SELECT DISTINCT tenant_id FROM metrics ORDER BY tenant_id")]
 
@@ -142,7 +141,7 @@ class ServiceDB:
         with self._lock:
             self.conn.close()
 
-    def __enter__(self) -> "ServiceDB":
+    def __enter__(self) -> ServiceDB:
         return self
 
     def __exit__(self, *exc) -> None:

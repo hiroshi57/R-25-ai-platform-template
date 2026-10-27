@@ -14,10 +14,23 @@ import logging
 from typing import Optional
 
 from core import (
-    APIKeyStore, BudgetGuard, LLMRouter, MultiNotifier, NoProviderAvailable, RoutingStrategy,
-    Settings, build_default_notifier, build_providers, configure_logging, detect_cost_anomaly,
-    get_request_id, new_request_id, provider_mode, set_request_id, unverified_providers,
+    APIKeyStore,
+    BudgetGuard,
+    LLMRouter,
+    MultiNotifier,
+    NoProviderAvailable,
     RateLimiter,
+    RoutingStrategy,
+    Settings,
+    build_default_notifier,
+    build_providers,
+    configure_logging,
+    detect_cost_anomaly,
+    get_request_id,
+    new_request_id,
+    provider_mode,
+    set_request_id,
+    unverified_providers,
 )
 
 from .db import ServiceDB
@@ -159,14 +172,14 @@ def create_app(notifier: MultiNotifier | None = None):
             raise HTTPException(
                 status_code=400,
                 detail=f"unknown strategy {body.strategy!r}; "
-                       f"valid: {[s.value for s in RoutingStrategy]}")
+                       f"valid: {[s.value for s in RoutingStrategy]}") from None
         strat = effective_strategy(t, strat)
         try:
             return chat(t, body.prompt, strat, body.max_output_tokens)
         except NoProviderAvailable as exc:
             # 上流プロバイダ全滅は 500 ではなく 503(再試行可能)
             logger.error("all providers failed: %s", exc)
-            raise HTTPException(status_code=503, detail="all upstream providers unavailable")
+            raise HTTPException(status_code=503, detail="all upstream providers unavailable") from exc
 
     @app.get("/v1/metrics")
     def metrics(t: str = Depends(current_tenant)):
@@ -182,8 +195,9 @@ def create_app(notifier: MultiNotifier | None = None):
 
     @app.get("/v1/budget")
     def budget(budget_usd: float = Query(..., gt=0),
-               day_of_month: Optional[int] = Query(None, ge=1, le=31),
-               days_in_month: Optional[int] = Query(None, ge=28, le=31),
+               # FastAPI は実行時に注釈を評価する。3.9 では `int | None` を評価できないため Optional のまま
+               day_of_month: Optional[int] = Query(None, ge=1, le=31),  # noqa: UP045
+               days_in_month: Optional[int] = Query(None, ge=28, le=31),  # noqa: UP045
                t: str = Depends(current_tenant)):
         # 旧実装は全期間の合計を「今月の消費」として扱い、day_of_month の既定が
         # 15 固定だった(実日付と無関係な数字で予算アラートを出していた)。
@@ -241,7 +255,7 @@ def create_app(notifier: MultiNotifier | None = None):
         try:
             DB.conn.execute("SELECT 1").fetchone()
         except Exception as exc:  # noqa: BLE001
-            raise HTTPException(status_code=503, detail=f"db unavailable: {exc}")
+            raise HTTPException(status_code=503, detail=f"db unavailable: {exc}") from exc
         return {"status": "ready", "providers": sorted(ROUTER.providers),
                 "auth_configured": len(API_KEYS) > 0}
 

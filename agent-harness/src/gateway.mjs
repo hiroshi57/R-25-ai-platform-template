@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { vercelRead } from "./adapters.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -21,6 +22,12 @@ const registry = {
     return { path: args.path, bytes: Buffer.byteLength(args.content, "utf8") };
   },
   send_message: (args) => ({ sent: true, preview: args.final_content_preview }),
+  // 読取専用アダプタ（automatic）。既定はドライラン=コマンドのログのみ。
+  vercel_read: (args) => vercelRead(args),
+  // 破壊的アダプタ（approval）。承認前にゲートで止まる想定。誤って実行されないよう防御。
+  run_orchestrator: () => {
+    throw new Error("run_orchestrator は承認必須。ドライランでは自動実行しない。");
+  },
 };
 
 function authorize(request, permissions) {

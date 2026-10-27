@@ -17,7 +17,6 @@ from __future__ import annotations
 import calendar
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Optional
 
 from .llm_router import RoutingStrategy
 
@@ -26,7 +25,7 @@ MIN_DAYS_FOR_CONFIDENCE = 3
 MIN_DAYS_FOR_HIGH_CONFIDENCE = 7
 
 
-def days_in_month_of(d: Optional[date] = None) -> int:
+def days_in_month_of(d: date | None = None) -> int:
     """その月の実日数を返す(2月=28/29, 4月=30, 1月=31).
 
     旧実装は days_in_month=30 固定だった。1月(31日)では着地見込みを約3%過小評価し、
@@ -56,7 +55,7 @@ class BudgetStatus:
 
 
 def project_month_end(spent_usd: float, day_of_month: int,
-                      days_in_month: Optional[int] = None) -> float:
+                      days_in_month: int | None = None) -> float:
     """日割りペースで月末コストを外挿."""
     if spent_usd < 0:
         raise ValueError("spent_usd must be >= 0")
@@ -90,8 +89,8 @@ class BudgetGuard:
         self.warn_ratio = float(warn_ratio)
         self.critical_ratio = float(critical_ratio)
 
-    def status(self, spent_usd: float, day_of_month: Optional[int] = None,
-               days_in_month: Optional[int] = None) -> BudgetStatus:
+    def status(self, spent_usd: float, day_of_month: int | None = None,
+               days_in_month: int | None = None) -> BudgetStatus:
         today = date.today()
         day_of_month = day_of_month if day_of_month is not None else today.day
         days_in_month = days_in_month if days_in_month is not None else days_in_month_of(today)
@@ -115,9 +114,9 @@ class BudgetGuard:
             burn_rate_ratio=ratio,
         )
 
-    def choose_strategy(self, spent_usd: float, day_of_month: Optional[int],
+    def choose_strategy(self, spent_usd: float, day_of_month: int | None,
                         requested: RoutingStrategy,
-                        days_in_month: Optional[int] = None) -> RoutingStrategy:
+                        days_in_month: int | None = None) -> RoutingStrategy:
         """予算内ルーティング: 着地見込みが予算超過なら cost 戦略へ自動降格.
 
         サンプル日数が少なく信頼度が low の場合は降格しない。月初 1 日目の
@@ -138,7 +137,7 @@ class CostAnomaly:
     note: str = ""
 
 
-def detect_cost_anomaly(recent_daily: List[float], today: float,
+def detect_cost_anomaly(recent_daily: list[float], today: float,
                         threshold: float = 2.0,
                         absolute_floor_usd: float = 0.0) -> CostAnomaly:
     """直近平均に対し today のコストが threshold 倍以上なら異常.

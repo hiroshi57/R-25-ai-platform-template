@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import unicodedata
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional
+from typing import Callable
 
 from .pricing import ModelEntry, load_catalog
 
@@ -29,7 +29,7 @@ class ProviderSpec:
     quality_score: float            # 0.0-1.0 の相対品質(社内ベンチ想定)
 
     @classmethod
-    def from_entry(cls, e: ModelEntry) -> "ProviderSpec":
+    def from_entry(cls, e: ModelEntry) -> ProviderSpec:
         return cls(e.name, e.model, e.cost_per_1k_input, e.cost_per_1k_output,
                    e.avg_latency_ms, e.quality_score)
 
@@ -127,7 +127,7 @@ class MockProvider(BaseProvider):
     ジッタは prompt のハッシュから導出するため再現性は保たれる(テストは安定)。
     """
 
-    def __init__(self, spec: ProviderSpec, responder: Optional[Callable[[str], str]] = None,
+    def __init__(self, spec: ProviderSpec, responder: Callable[[str], str] | None = None,
                  jitter_ratio: float = 0.35) -> None:
         super().__init__(spec)
         self.jitter_ratio = jitter_ratio
@@ -137,7 +137,7 @@ class MockProvider(BaseProvider):
     def _latency_for(self, prompt: str) -> float:
         if self.jitter_ratio <= 0:
             return self.spec.avg_latency_ms
-        digest = hashlib.sha256(f"{self.spec.name}:{prompt}".encode("utf-8")).digest()
+        digest = hashlib.sha256(f"{self.spec.name}:{prompt}".encode()).digest()
         # 0.0-1.0 の決定的な値
         unit = int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
         # 対数正規に近い右肩の重い分布を粗く再現(p95 が平均より明確に大きくなる)
@@ -167,7 +167,7 @@ class FailingProvider(BaseProvider):
         raise RuntimeError(f"provider {self.spec.name} is unavailable")
 
 
-def default_specs() -> Dict[str, ProviderSpec]:
+def default_specs() -> dict[str, ProviderSpec]:
     return {n: ProviderSpec.from_entry(e) for n, e in load_catalog().items()}
 
 
@@ -175,5 +175,5 @@ def default_specs() -> Dict[str, ProviderSpec]:
 DEFAULT_SPECS = list(default_specs().values())
 
 
-def default_mock_providers() -> Dict[str, BaseProvider]:
+def default_mock_providers() -> dict[str, BaseProvider]:
     return {name: MockProvider(spec) for name, spec in default_specs().items()}

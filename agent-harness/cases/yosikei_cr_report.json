@@ -1,0 +1,22 @@
+{
+  "id": "yosikei_cr_report",
+  "title": "ヨシケイ CRレポートを自動生成する",
+  "goal": "各媒体のrawデータを集計し、顧客提出用FMT(Excel)を自動生成する",
+  "tags": ["csv", "excel", "レポート", "集計", "顧客データ"],
+  "month": "202608",
+  "tool": "orchestrator",
+  "tool_root": "C:/Users/hiroshi_takizawa/yosikei-agents",
+  "tool_entry": "agents/orchestrator.py",
+  "tool_args": {
+    "fmt": "data/202608/fmt/FMT_202608_作業用.xlsx",
+    "raw": "data/202608/input",
+    "tool": "data/202608/input/yahoo/【ヨシケイ】CRレポ用_簡易参照ツール.xlsx",
+    "backup-dir": "data/202608/output/archive"
+  },
+  "phases": ["T00", "T02", "T03", "T04", "T05", "T06-CR", "T07", "T08", "T09"],
+  "context_reads": [
+    { "tool": "vercel_read", "note": "関連ダッシュボードの稼働状況を読取専用で確認" }
+  ],
+  "final_action": "run_orchestrator",
+  "max_repairs": 1
+}

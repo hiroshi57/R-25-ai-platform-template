@@ -21,8 +21,10 @@ function check(name, passed, detail = {}) {
 }
 
 export function verify(artifactRelPath) {
-  const text = readFileSync(path.join(ROOT, artifactRelPath), "utf8");
-  const fixture = readFileSync(path.join(ROOT, "checks/fixture.csv"), "utf8");
+  // 改行コードを正規化（Windows の CRLF でも一致判定が壊れないように）
+  const norm = (s) => s.replace(/\r\n/g, "\n");
+  const text = norm(readFileSync(path.join(ROOT, artifactRelPath), "utf8"));
+  const fixture = norm(readFileSync(path.join(ROOT, "checks/fixture.csv"), "utf8"));
 
   const lines = text.trim().split("\n");
   const header = lines[0];
