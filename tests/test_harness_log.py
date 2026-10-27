@@ -227,7 +227,10 @@ def _session(tmp_path: Path, sid: str = "s1") -> tuple[Path, Path]:
     return cwd, tr
 
 
-def test_hook_stop_records_session_usage_and_updates_it(tmp_path):
+def test_hook_stop_records_session_usage_and_updates_it(tmp_path, monkeypatch):
+    # 上の階層（例: ホームフォルダ）が git リポジトリでも、その名前を拾わないようにする。
+    # このテストが確かめたいのは「git でない作業フォルダではフォルダ名を使う」こと
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
     cwd, tr = _session(tmp_path)
     payload = {"hook_event_name": "Stop", "session_id": "s1", "transcript_path": str(tr), "cwd": str(cwd)}
     out = hl.run_hook(payload, month="202610")
