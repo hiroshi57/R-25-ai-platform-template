@@ -18,6 +18,16 @@ RSI ロードマップ（arXiv:2609.11873）を本ハーネスに整合させる
 retro を RSI 3検証課題で切り分け / harness-logs 逐語保存の根拠補強 / Library Drift 対策 / 適応的停止での escalation 言語化。
 反映候補は `.claude/rules/harness-retro.md`（提案1・3・4）と `.claude/rules/memory-curation.md`（提案2）。
 
+Meta "Organizational Second Brain"（engineering.fb.com 2026-09-02）の知見を反映する提案は
+`harness-proposals/2026-09-15-organizational-second-brain.md` にある。3提案すべて **2026-09-15 承認・反映済み**:
+A=失敗の帰属テスト（材料から正解に到達できたか? で knowledge / procedure / ambiguity を切り分け）、
+B=独立コンテキストの敵対的レビュー、C=記憶の type に position / gateway を追加
+（position=人間のみ変更可の確定方針、gateway=適用条件ゲート）。
+反映先は `.claude/rules/failure-attribution.md`（A・新設）、`.claude/rules/harness-retro.md`（B）、
+`.claude/rules/memory-curation.md`（C）。
+[更新: 2026-10-28] 上記は harness-rules へ移送済み（同 repo PR #35）。B の採番は移送時に
+**提案20** へ振り直した（起案時は提案6）。
+
 **How to apply**: メモリ運用ルールの改善や harness-retro を扱うとき参照。
 運用ルール本体は [[memory-curation-rules]]。グローバル CLAUDE.md セクション7 の提案フォーマット規約に準拠。
 
