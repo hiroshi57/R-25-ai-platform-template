@@ -149,6 +149,9 @@ curl -X POST http://localhost:8000/v1/notify/scheduled \
   -d '{"message":"本日15:00より定例会議です"}'
 ```
 
+Webhook/トークンの取得から Secret Manager 登録・Cloud Scheduler 設定までの手順は
+[`docs/notifications-setup.md`](docs/notifications-setup.md) を参照。
+
 ---
 
 ## 実プロバイダ接続

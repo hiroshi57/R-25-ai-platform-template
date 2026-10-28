@@ -49,6 +49,17 @@ spec:
             # 注入しておらず、gemini だけ常に mock で動く不整合があった。
             - name: GOOGLE_API_KEY
               valueFrom: { secretKeyRef: { name: google-api-key, key: latest } }
+            # --- スケジュール通達(POST /v1/notify/scheduled)---
+            # 未設定のチャネルは自動で no-op。両方揃わなくても起動はする。
+            # Teams Webhook URL は URL 内にトークンを含むため Secret 管理。
+            - name: TEAMS_WEBHOOK_URL
+              valueFrom: { secretKeyRef: { name: teams-webhook-url, key: latest } }
+            # Chatwork API トークンは Secret 管理。
+            - name: CHATWORK_API_TOKEN
+              valueFrom: { secretKeyRef: { name: chatwork-api-token, key: latest } }
+            # ルームIDは秘匿情報ではないため平文で可(投稿先の切替はここを変える)。
+            - name: CHATWORK_ROOM_ID
+              value: "REPLACE_WITH_ROOM_ID"
           resources:
             limits: { cpu: "1", memory: "512Mi" }
           startupProbe:
