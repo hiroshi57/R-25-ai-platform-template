@@ -13,6 +13,11 @@ diff 形式・根拠リンク付き。5提案すべて **2026-09-11 承認・rep
 反映先は `.claude/rules/memory-curation.md`（1・2・3）と `.claude/rules/harness-retro.md`（4・5）。
 残作業は提案4のグローバル CLAUDE.md セクション7 本文追記のみ（保護対象・本 repo 外）。
 
+RSI ロードマップ（arXiv:2609.11873）を本ハーネスに整合させる提案は
+`harness-proposals/2026-09-15-rsi-roadmap-alignment.md` にある。diff 形式・4提案・**人間承認待ち（未反映）**:
+retro を RSI 3検証課題で切り分け / harness-logs 逐語保存の根拠補強 / Library Drift 対策 / 適応的停止での escalation 言語化。
+反映候補は `.claude/rules/harness-retro.md`（提案1・3・4）と `.claude/rules/memory-curation.md`（提案2）。
+
 **How to apply**: メモリ運用ルールの改善や harness-retro を扱うとき参照。
 運用ルール本体は [[memory-curation-rules]]。グローバル CLAUDE.md セクション7 の提案フォーマット規約に準拠。
 
