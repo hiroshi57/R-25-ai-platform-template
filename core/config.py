@@ -67,6 +67,8 @@ class Settings:
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
     # 月次予算(USD)。0 なら予算ガード無効
     monthly_budget_usd: float = 0.0
+    # Jev によるルーティング戦略の助言: off / shadow（記録だけ）/ on（採用）。既定 off
+    jev_routing: str = "off"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -111,4 +113,5 @@ class Settings:
             db_path=os.getenv("AI_PLATFORM_DB_PATH", "ai_platform.db").strip() or "ai_platform.db",
             cors_origins=origins,
             monthly_budget_usd=_env_float("AI_PLATFORM_MONTHLY_BUDGET_USD", 0.0, minimum=0.0),
+            jev_routing=os.getenv("AI_PLATFORM_JEV_ROUTING", "off").strip().lower() or "off",
         )

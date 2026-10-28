@@ -26,14 +26,10 @@ import os
 import re
 import subprocess
 import sys
-import time
-import urllib.error
-import urllib.request
 from fnmatch import fnmatch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_BASE_URL = "https://api.typesafe.ai"
 MODEL = "jev-latest"
 SKIP_BELOW = 0.15            # これ以下だけを「影響なし」として省く
 BATCH_SIZE = 50
@@ -281,21 +277,12 @@ def load_shadow_records(logs_dir: Path) -> list[dict]:
 
 
 def http_post(payload: dict, api_key: str, base_url: str | None = None, timeout: float = 15.0) -> dict:
-    """POST /v1/systemone。429 / 529 は少し待って最大3回まで送り直す."""
-    url = (base_url or os.environ.get("TYPESAFE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/") + "/v1/systemone"
-    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    for attempt in range(3):
-        req = urllib.request.Request(url, data=body, method="POST", headers={  # noqa: S310 — https 固定
-            "Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 — URL は固定の https
-                return json.loads(r.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            if e.code in (429, 529) and attempt < 2:
-                time.sleep(2 ** attempt)
-                continue
-            raise RuntimeError(f"HTTP {e.code}") from None      # 応答本文は出さない
-    raise RuntimeError("送り直しの上限に達した")
+    """POST /v1/systemone。実装は core/jev_client.py に一本化している（429 / 529 は送り直す）."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from core.jev_client import post_systemone
+
+    return post_systemone(payload, api_key=api_key, base_url=base_url, timeout=timeout)
 
 
 def _git(*args: str) -> str:

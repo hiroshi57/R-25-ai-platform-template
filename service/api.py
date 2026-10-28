@@ -32,6 +32,8 @@ from core import (
     set_request_id,
     unverified_providers,
 )
+from core.jev_advisor import AdviceMode, StrategyAdvisor, parse_mode
+from core.jev_client import post_systemone
 
 from .db import ServiceDB
 from .report_html import build_html_report
@@ -51,6 +53,22 @@ RATE_LIMITER = RateLimiter(capacity=SETTINGS.rate_capacity,
 # スケジュール通達の同報先。env(TEAMS_WEBHOOK_URL / CHATWORK_API_TOKEN / CHATWORK_ROOM_ID)
 # から設定済みチャネルだけを構築する。未設定なら no-op(チャネルゼロ)。
 NOTIFIER = build_default_notifier()
+
+
+def _build_advisor() -> StrategyAdvisor:
+    """Jev の助言役。キーが無いのに shadow / on が指定されたら、警告して off にする."""
+    import os
+
+    mode = parse_mode(SETTINGS.jev_routing)
+    if mode != AdviceMode.OFF and not os.environ.get("TYPESAFE_API_KEY"):
+        logger.warning("AI_PLATFORM_JEV_ROUTING=%s but TYPESAFE_API_KEY is not set; Jev routing is off",
+                       mode.value)
+        mode = AdviceMode.OFF
+    # 応答を待たせすぎないよう、1回だけ・3秒で打ち切る（失敗時は要求どおりの戦略に戻る）
+    return StrategyAdvisor(post=lambda payload: post_systemone(payload, timeout=3.0, attempts=1), mode=mode)
+
+
+ADVISOR = _build_advisor()
 
 MAX_PROMPT_CHARS = 32_000
 MAX_NOTIFY_CHARS = 8_000
@@ -173,9 +191,13 @@ def create_app(notifier: MultiNotifier | None = None):
                 status_code=400,
                 detail=f"unknown strategy {body.strategy!r}; "
                        f"valid: {[s.value for s in RoutingStrategy]}") from None
-        strat = effective_strategy(t, strat)
+        advice = ADVISOR.advise(body.prompt, strat)
+        strat = effective_strategy(t, advice.used)   # 予算ガードは Jev の助言より後に効かせる
         try:
-            return chat(t, body.prompt, strat, body.max_output_tokens)
+            result = chat(t, body.prompt, strat, body.max_output_tokens)
+            if advice.mode != AdviceMode.OFF:
+                result["routing_advice"] = advice.as_log()
+            return result
         except NoProviderAvailable as exc:
             # 上流プロバイダ全滅は 500 ではなく 503(再試行可能)
             logger.error("all providers failed: %s", exc)
