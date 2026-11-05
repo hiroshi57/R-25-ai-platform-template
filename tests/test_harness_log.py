@@ -29,6 +29,15 @@ def _tool_result(text: str, sidechain: bool = False) -> dict:
             "message": {"content": [{"type": "tool_result", "tool_use_id": "x", "content": text}]}}
 
 
+def _assistant_usage(input_tokens: int = 0, output_tokens: int = 0, cache_read: int = 0,
+                     cache_creation: int = 0, content=None) -> dict:
+    """usage を持つ assistant メッセージ（＝課金された model call）."""
+    return {"type": "assistant", "message": {
+        "content": content if content is not None else [{"type": "text", "text": "ok"}],
+        "usage": {"input_tokens": input_tokens, "output_tokens": output_tokens,
+                  "cache_read_input_tokens": cache_read, "cache_creation_input_tokens": cache_creation}}}
+
+
 def _transcript(tmp_path: Path, entries: list[dict]) -> Path:
     return _file(tmp_path, "agent.jsonl", "\n".join(json.dumps(e, ensure_ascii=False) for e in entries) + "\n")
 
@@ -118,6 +127,42 @@ def test_measure_does_not_copy_message_text(tmp_path):
     secret = "AKIA-SECRET-VALUE-123"
     t = _transcript(tmp_path, [_tool_use("Bash", command=f"echo {secret}"), _tool_result(secret)])
     assert secret not in json.dumps(hl.measure(t), ensure_ascii=False)
+
+
+def test_measure_sums_tokens_and_counts_paid_calls(tmp_path):
+    t = _transcript(tmp_path, [
+        _assistant_usage(input_tokens=100, output_tokens=20, cache_read=500, cache_creation=30),
+        _tool_result("x"),
+        _assistant_usage(input_tokens=200, output_tokens=40, cache_read=500, cache_creation=0),
+    ])
+    m = hl.measure(t)
+    assert m["tokens_input"] == 300
+    assert m["tokens_output"] == 60
+    assert m["tokens_cache_read"] == 1000
+    assert m["tokens_cache_creation"] == 30
+    assert m["tokens_total"] == 300 + 60 + 30          # input+output+cache_creation（cache_read は別掲）
+    assert m["paid_model_calls"] == 2
+
+
+def test_measure_tokens_are_zero_without_usage(tmp_path):
+    t = _transcript(tmp_path, [_tool_use("Read", file_path="/a"), _tool_result("x")])
+    m = hl.measure(t)
+    assert (m["tokens_input"], m["tokens_output"], m["tokens_total"]) == (0, 0, 0)
+    assert m["paid_model_calls"] == 0
+
+
+def test_measure_tokens_respect_since_and_sidechain_filters(tmp_path):
+    t = _transcript(tmp_path, [
+        _at(_assistant_usage(input_tokens=999, output_tokens=999), "2026-10-01T00:00:00Z"),   # 前のタスク
+        _at(_assistant_usage(input_tokens=10, output_tokens=5), "2026-10-01T02:00:00Z"),
+    ])
+    m = hl.measure(t, since="2026-10-01T01:00:00+00:00")
+    assert (m["tokens_input"], m["tokens_output"], m["paid_model_calls"]) == (10, 5, 1)
+
+    main = _assistant_usage(input_tokens=7)
+    sub = {**_assistant_usage(input_tokens=3), "isSidechain": True}
+    ms = hl.measure(_transcript(tmp_path, [main, sub]), sidechain_only=True)
+    assert (ms["tokens_input"], ms["paid_model_calls"]) == (3, 1)
 
 
 def test_save_with_transcript_writes_measured_usage_next_to_candidate(tmp_path):
