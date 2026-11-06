@@ -124,6 +124,8 @@ def measure(transcript: Path, sidechain_only: bool = False, since: str | None = 
     start = _parse_time(since) if since is not None else None
     counts = Counter()
     reads: Counter[str] = Counter()
+    tok: Counter[str] = Counter()   # input / output / cache_read / cache_creation（HarnessMM 式8）
+    paid_calls = 0                  # usage を持つ assistant メッセージ（＝課金された model call）の数
     largest = 0
     lines_read = bad_lines = 0
     with Path(transcript).open(encoding="utf-8", errors="replace") as f:
@@ -146,6 +148,13 @@ def measure(transcript: Path, sidechain_only: bool = False, since: str | None = 
                 except ValueError:
                     continue
             message = entry.get("message")
+            usage = message.get("usage") if isinstance(message, dict) else None
+            if isinstance(usage, dict):
+                paid_calls += 1
+                tok["input"] += int(usage.get("input_tokens") or 0)
+                tok["output"] += int(usage.get("output_tokens") or 0)
+                tok["cache_read"] += int(usage.get("cache_read_input_tokens") or 0)
+                tok["cache_creation"] += int(usage.get("cache_creation_input_tokens") or 0)
             content = message.get("content") if isinstance(message, dict) else None
             if not isinstance(content, list):
                 continue
@@ -180,6 +189,13 @@ def measure(transcript: Path, sidechain_only: bool = False, since: str | None = 
         "other_calls": counts["other_calls"],
         "largest_output_lines": largest,
         "reread_files": sorted(p for p, n in reads.items() if n >= 2),
+        # complete-task accounting（HarnessMM 式8）。キャッシュ入力も数える。中身は写さず数だけ
+        "tokens_input": tok["input"],
+        "tokens_output": tok["output"],
+        "tokens_cache_read": tok["cache_read"],
+        "tokens_cache_creation": tok["cache_creation"],
+        "tokens_total": tok["input"] + tok["output"] + tok["cache_creation"],  # cache_read は別掲
+        "paid_model_calls": paid_calls,
         "transcript_entries": lines_read,
         "transcript_bad_lines": bad_lines,
         "sidechain_only": sidechain_only,
