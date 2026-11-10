@@ -1,6 +1,6 @@
 # RSI ロードマップ整合 — ハーネス自己改善ループへの反映提案
 
-> **状態**: 人間承認待ち（unapproved / pending human review）
+> **状態**: 2026-11-11 人間承認済み・ルール本体へ反映済み（提案1→harness-retro.md 提案6 / 提案2→memory-curation.md ルール4補強 / 提案3→harness-retro.md チェック項目4 / 提案4→harness-retro.md エスカレーション分析メモ）
 > **作成日**: 2026-09-15
 > **起源文献**: *The Last AI Built by Humans: Toward Genuine Recursive Self-Improvement*, arXiv:2609.11873v1 (Duan et al., Theseus Labs ほか, 2026-09-10)
 > **プロジェクトページ**: https://theseus-labs-rsi.github.io/
