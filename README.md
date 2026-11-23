@@ -194,6 +194,24 @@ export AI_PLATFORM_PRICING_FILE=./pricing.json
 
 ---
 
+## ハーネス計測（構成A/Bの対応比較）
+
+このテンプレを複製した案件は、ハーネス構成（toolset / planning / context_policy / model）を
+替えるべきかを**実測の対応比較**で決められる。詳しい手順は `.claude/skills/harness-measure/SKILL.md`。
+
+```bash
+# 記録: タスク完了時に構成を添えて保存（実トークン・実ツール使用は transcript から自動計測）
+python scripts/harness_log.py save --project <slug> --task-id <id> \
+  --worker-report wr.json --review rv.json --transcript latest-subagent --harness-config hc.json
+# 比較: 同じタスクを2構成で記録したら、差分を見る
+python scripts/harness_measure.py summary .claude/harness-logs/<slug>
+python scripts/harness_measure.py compare .claude/harness-logs/<slug> --component toolset --a predefined --b action-fusion
+```
+
+採否は測定だけで決めない（受理ゲート＋人間承認）。由来: SoL-Pi (arXiv:2609.20519)。
+
+---
+
 ## ライセンス
 
 MIT — [LICENSE](LICENSE) を参照。

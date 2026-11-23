@@ -360,7 +360,7 @@ def run_hook(payload: dict, month: str | None = None) -> Path | None:
 
 def save(logs_dir: Path, project: str, task_id: str, month: str, files: dict[str, Path],
          transcript: Path | None = None, sidechain_only: bool = False, warn=None,
-         since: str | None = None) -> list[str]:
+         since: str | None = None, harness_config: Path | None = None) -> list[str]:
     _check("project", project)
     _check("task_id", task_id)
     if not re.fullmatch(r"\d{6}", month or ""):
@@ -406,6 +406,22 @@ def save(logs_dir: Path, project: str, task_id: str, month: str, files: dict[str
         usage = {**measure(transcript, sidechain_only, since), "transcript": Path(transcript).name}
         dest.write_text(json.dumps(usage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         saved.append(dest.name)
+
+    if harness_config is not None:
+        # この run の構成（model/toolset/planning/context_policy）を候補ごとに残す。
+        # worker-report と同じ suffix に揃える（対応比較で候補と構成を対で読めるように）。
+        # 構成は Lead が配布時に決める値で、Worker の自己申告ではない（CLAUDE.md §7）。
+        name = "harness-config.json"
+        dest = d / f"harness-config{report_suffix}.json" if report_suffix is not None else _numbered(d, name)
+        if dest.exists():
+            dest = _numbered(d, name)
+        data = Path(harness_config).read_bytes()
+        try:
+            json.loads(data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            warn(f"harness_config が JSON として読めません（そのまま保存します）: {harness_config}")
+        dest.write_bytes(data)
+        saved.append(dest.name)
     return saved
 
 
@@ -420,6 +436,8 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--logs-dir", type=Path, default=DEFAULT_LOGS_DIR)
     for kind in KINDS:
         s.add_argument(f"--{kind.replace('_', '-')}", type=Path, dest=kind)
+    s.add_argument("--harness-config", type=Path, dest="harness_config",
+                   help="この run の構成 JSON（model/toolset/planning/context_policy）。対応比較に使う")
     m = sub.add_parser("measure", help="トランスクリプトからツール呼び出しを数えて表示する")
     lo = sub.add_parser("locate", help="Worker（サブエージェント）の記録がどこに残るかを判定する")
 
@@ -470,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("保存するファイルを1つ以上指定してください")
     try:
         saved = save(a.logs_dir, a.project, a.task_id, a.month, files, transcript, a.sidechain_only,
-                     since=a.since)
+                     since=a.since, harness_config=a.harness_config)
     except (ValueError, OSError) as e:
         raise SystemExit(str(e)) from e
     print(json.dumps({"dir": (a.logs_dir / a.project / a.month / a.task_id).as_posix(), "saved": saved},
